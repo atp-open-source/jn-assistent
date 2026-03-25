@@ -1,0 +1,35 @@
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+name = "leverance-jn"
+version = "0.1.0"
+description = "Alle API'er for journalnotatsassitenten"
+requires-python = ">=3.11"
+dependencies = [
+    "aiservice",
+    "flask>=3.0",
+    "sqlalchemy>=2.0",
+    "python-dateutil>=2.9",
+    "requests>=2.31",
+]
+
+[dependency-groups]
+dev = [
+    "freezegun>=1.5",
+    "numpy>=1.26",
+]
+
+# Tell uv that 'aiservice' is resolved from the local workspace, not PyPI
+[tool.uv.sources]
+aiservice = { workspace = true }
+
+[tool.pdm.build]
+# package-dir = ".." tells PDM that the leverance/ Python package lives one
+# level above this pyproject.toml, i.e. at the workspace root.
+# This lets `import leverance.*` resolve to the leverance/ namespace package
+# without an __init__.py, so the external leverance framework can be merged
+# into the same namespace once it is available.
+package-dir = ".."
+includes = ["leverance/"]

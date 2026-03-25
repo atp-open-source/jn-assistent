@@ -1,0 +1,41 @@
+[tool.pdm.workspace]
+members = ["aiservice", "audio_streamer", "leverance"]
+
+# uv (used by PDM as resolver backend) needs its own workspace declaration
+[tool.uv.workspace]
+members = ["aiservice", "audio_streamer", "leverance"]
+
+# Tell uv to resolve workspace members locally, not from PyPI
+[tool.uv.sources]
+aiservice = { workspace = true }
+audio-streamer = { workspace = true }
+leverance-jn = { workspace = true }
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+name = "jn-assistent"
+version = "0.1.0"
+description = "Journalnotats-assistent workspace root"
+requires-python = ">=3.11"
+# Declare workspace members as dependencies so `pdm install` installs them all
+dependencies = [
+    "aiservice",
+    "audio-streamer",
+    "leverance-jn",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "freezegun>=1.5",
+    "numpy>=1.26",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "leverance"]
+python_files = ["test_*.py", "_test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

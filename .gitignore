@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# PDM
+.venv/
+.pdm-build/
+.pdm-python
+__pypackages__/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Node / Vue frontend
+fe/node_modules/
+fe/dist/
+fe/.vite/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
