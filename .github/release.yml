@@ -5,18 +5,17 @@ changelog:
       - ignore-for-release
       - dependencies
     authors:
-      - dependabot
       - github-actions
   categories:
-    - title: 💥 Brydende ændringer
+    - title: Kritiske ændringer
       labels: [breaking]
-    - title: 🚀 Nye funktioner
+    - title: Nye funktioner
       labels: [feature, enhancement]
-    - title: 🐛 Fejlrettelser
+    - title: Fejlrettelser
       labels: [bug, fix]
-    - title: 📚 Dokumentation
+    - title: Dokumentation
       labels: [documentation]
-    - title: 🧰 Vedligehold
+    - title: Vedligehold
       labels: [chore, refactor, test, ci]
     - title: Øvrige ændringer
       labels: ["*"]

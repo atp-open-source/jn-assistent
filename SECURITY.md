@@ -47,9 +47,6 @@ Uden for scope:
   telefoniplatforme.
 - Problemer, der kræver fysisk adgang til en kunderådgivers
   arbejdsstation.
-- Fund, der udelukkende bygger på forældede afhængigheder uden
-  påvist konkret effekt — opret i stedet et almindeligt issue eller
-  lad Dependabot håndtere det.
 
 ## Anbefalinger til drift
 
