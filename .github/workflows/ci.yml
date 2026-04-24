@@ -94,19 +94,38 @@ jobs:
   frontend:
     name: Frontend-build
     runs-on: ubuntu-latest
-    if: hashFiles('fe/package.json') != ''
     defaults:
       run:
         working-directory: fe
     steps:
       - uses: actions/checkout@v4
+
+      - name: Tjek om fe/package.json findes
+        id: check_fe
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: |
+          if [ -f fe/package.json ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Springer frontend-build over — fe/package.json mangler endnu."
+          fi
+
       - uses: actions/setup-node@v4
+        if: steps.check_fe.outputs.exists == 'true'
         with:
           node-version: "20"
           cache: "npm"
           cache-dependency-path: fe/package-lock.json
-      - run: npm ci
-      - run: npm run lint --if-present
-      - run: npm run type-check --if-present
-      - run: npm run test --if-present -- --run
-      - run: npm run build --if-present
+
+      - if: steps.check_fe.outputs.exists == 'true'
+        run: npm ci
+      - if: steps.check_fe.outputs.exists == 'true'
+        run: npm run lint --if-present
+      - if: steps.check_fe.outputs.exists == 'true'
+        run: npm run type-check --if-present
+      - if: steps.check_fe.outputs.exists == 'true'
+        run: npm run test --if-present -- --run
+      - if: steps.check_fe.outputs.exists == 'true'
+        run: npm run build --if-present

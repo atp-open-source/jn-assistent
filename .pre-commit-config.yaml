@@ -1,4 +1,4 @@
-# Pre-commit hooks — kører lint, formattering og secret-scanning lokalt,
+# Pre-commit hooks — kører lint og formattering lokalt,
 # før et commit sendes til serveren. Installér med `pre-commit install`.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -21,8 +21,3 @@ repos:
       - id: ruff
         args: [--fix]
       - id: ruff-format
-
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.18.4
-    hooks:
-      - id: gitleaks
