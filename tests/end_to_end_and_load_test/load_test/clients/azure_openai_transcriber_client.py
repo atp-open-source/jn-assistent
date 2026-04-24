@@ -6,20 +6,18 @@
 #   url       = {https://hf.co/datasets/alexandrainst/coral},
 # }
 
+import logging
 import os
 import time
-import json
-import logging
 from typing import Literal
 from uuid import uuid4
 
+from azure.core.credentials import AccessToken
 from azure.identity import (
     AzurePipelinesCredential,
     ClientSecretCredential,
     DefaultAzureCredential,
 )
-from azure.core.credentials import AccessToken
-
 from clients.base_client import BaseHelperClient, UserContext
 
 
@@ -88,11 +86,7 @@ class AzureOpenAITranscriberClient(BaseHelperClient):
                 service_connection_id=service_connection_id,
                 system_access_token=system_access_token,
             )
-        elif (
-            tenant_id
-            and client_id
-            and (client_secret := os.getenv("AZURE_CLIENT_SECRET"))
-        ):
+        elif tenant_id and client_id and (client_secret := os.getenv("AZURE_CLIENT_SECRET")):
             return ClientSecretCredential(
                 tenant_id=tenant_id,
                 client_id=client_id,
@@ -110,9 +104,7 @@ class AzureOpenAITranscriberClient(BaseHelperClient):
 
         # Forsøg at hente token
         try:
-            token = self.credential.get_token(
-                "https://cognitiveservices.azure.com/.default"
-            )
+            token = self.credential.get_token("https://cognitiveservices.azure.com/.default")
             if (
                 not token
                 or not getattr(token, "token", None)

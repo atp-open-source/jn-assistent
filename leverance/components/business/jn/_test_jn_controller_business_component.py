@@ -1,6 +1,6 @@
+import json
 import unittest
 from unittest.mock import patch
-import json
 
 from leverance.components.business.jn.jn_controller_business_component import (
     JNControllerBusinessComponent,
@@ -72,9 +72,7 @@ class TestController(unittest.TestCase):
         mock_extract_messages_blob.return_value = self.beskeder
 
         # Initialisér Controller-klassen
-        controller = JNControllerBusinessComponent(
-            request_uid=self.uuid, config_name=None
-        )
+        controller = JNControllerBusinessComponent(request_uid=self.uuid, config_name=None)
 
         # Kald metoden
         agent_id, koe_id, cpr, samtale = controller.read_and_sort_messages(
@@ -118,9 +116,9 @@ class TestController(unittest.TestCase):
         # Vi simulerer at den første blob indeholder de første 2 beskeder,
         # og den anden blob indeholder de sidste 2 beskeder.
         mock_create_container_client.return_value.get_blob_client.return_value.download_blob.return_value.readall.side_effect = [
-            "".join(
-                json.dumps(besked) + "\n" for besked in self.beskeder[start:end]
-            ).encode("utf-8")
+            "".join(json.dumps(besked) + "\n" for besked in self.beskeder[start:end]).encode(
+                "utf-8"
+            )
             for start, end in [(0, 2), (2, 4)]
         ]
 

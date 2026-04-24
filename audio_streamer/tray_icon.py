@@ -1,19 +1,13 @@
-import io, json, os, queue, sys, threading, time
-from typing import Any, Dict, List, Union
-from pydantic import BaseModel
-from loguru import logger
+import os
+import sys
+import threading
 
 # Tilføj imports til systembakkeikon
 import pystray
-from PIL import Image
-import win32gui
-import win32con
 import sounddevice as sd
-import numpy as np
-
-from audio_streamer.config import DevConfig, ProdConfig, get_config, Metadata
-import requests
 import urllib3
+from loguru import logger
+from PIL import Image
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -100,9 +94,7 @@ class TrayIcon:
         # Hovedmenu
         menu = (
             pystray.MenuItem("Log lyd enheder", lambda: self._log_devices()),
-            pystray.MenuItem(
-                "Exit", lambda: self.exit_callback() if self.exit_callback else None
-            ),
+            pystray.MenuItem("Exit", lambda: self.exit_callback() if self.exit_callback else None),
         )
 
         icon = pystray.Icon(

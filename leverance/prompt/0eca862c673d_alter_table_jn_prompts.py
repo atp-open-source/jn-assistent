@@ -20,7 +20,6 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 from alembic import op
 from spark_core.database.db_utils import execute_sql
 
-
 # revision identifiers, brugt af Alembic.
 revision = "0eca862c673d"
 down_revision = "ec20d1c02919"
@@ -90,7 +89,7 @@ Du kan f.eks. starte dine sætninger i 'Status' på følgende måde:
     - "Henvendelse afsluttet."
 
 ## Reasoning
-Til hvert journalnotat skal der inkluderes en kort forklaring af, hvorfor notatet er formuleret som det er. 
+Til hvert journalnotat skal der inkluderes en kort forklaring af, hvorfor notatet er formuleret som det er.
 Reasoning skal beskrive:
     - De vigtigste faktorer i samtalen, der påvirker notatet
     - Eventuelle beslutninger, prioriteringer eller antagelser
@@ -158,7 +157,7 @@ Notatlængden skal afhænge af, hvilken kategori samtalen tilhører:
 - Lang samtale: 900 til 1500 tokens
   - Brug ~900 tokens ved struktureret, men overskueligt indhold.
   - Brug op mod 1500 tokens ved dybdegående eller mangefacetterede problemstillinger.
-  
+
 ## Oplysninger
 Hvis det nævnes i samtalen skal følgende være inkluderet i 'Oplysninger':
     1. **Hovedformålet** med henvendelsen.
@@ -191,7 +190,7 @@ Du kan f.eks. starte dine sætninger i 'Status' på følgende måde:
     - "Henvendelse afsluttet."
 
 ## Reasoning
-Til hvert journalnotat skal der inkluderes en kort forklaring af, hvorfor notatet er formuleret som det er. 
+Til hvert journalnotat skal der inkluderes en kort forklaring af, hvorfor notatet er formuleret som det er.
 Reasoning skal beskrive:
     - De vigtigste faktorer i samtalen, der påvirker notatet
     - Eventuelle beslutninger, prioriteringer eller antagelser
@@ -242,18 +241,18 @@ Du skal fjerne eller omskrive følgende:
      2. Brug "jeg" om kunderådgiver. Hvis der f.eks. står "Kunderådgiveren informerer om..." skal det omskrives til "Jeg informerer om...".
      3. Hvis borgers telefonnummer er skrevet under 'Oplysninger' skal det flyttes til 'Status'.
      4. Hvis du (kunderådgiver) "lover", "forsikrer" eller "garanterer" noget skal det omskrives. Kunderådgiveren må **aldrig** give løfter.
-     5. Hvis 'Status' er tom skal du skrive "Henvendelse afsluttet". 'Status' må *aldrig* være tom.  
+     5. Hvis 'Status' er tom skal du skrive "Henvendelse afsluttet". 'Status' må *aldrig* være tom.
 
 ### Output
-Du skal returnere det omskrevne notat. 
-Output skal ikke være i punktform. 
+Du skal returnere det omskrevne notat.
+Output skal ikke være i punktform.
 
 Output skal være i JSON-format med følgende struktur:
 
-{ 
-"oplysninger": "<oplysninger>", 
-"status": "<status>" 
-}  
+{
+"oplysninger": "<oplysninger>",
+"status": "<status>"
+}
     """
 
     execute_sql(

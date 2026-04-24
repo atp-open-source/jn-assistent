@@ -1,13 +1,17 @@
 from abc import ABC, abstractmethod
-from aiservice.core_functions import generate_random_id
+
 from azure.identity import (
     ClientSecretCredential,
     ManagedIdentityCredential,
 )
 from azure.identity.aio import (
     ClientSecretCredential as AsyncClientSecretCredential,
+)
+from azure.identity.aio import (
     ManagedIdentityCredential as AsyncManagedIdentityCredential,
 )
+
+from aiservice.core_functions import generate_random_id
 
 DEFAULT_SCOPE = "https://cognitiveservices.azure.com/.default"
 

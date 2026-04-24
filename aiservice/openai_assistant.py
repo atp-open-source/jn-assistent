@@ -1,13 +1,16 @@
-from openai import AzureOpenAI, RateLimitError, BadRequestError
-from aiservice.authentication import BaseAuthentication
+import random
+
+import httpx
+from openai import AzureOpenAI, BadRequestError, RateLimitError
 from openai.types.chat.chat_completion import (
     ChatCompletion,
     ChatCompletionMessage,
     Choice,
     CompletionUsage,
 )
+
+from aiservice.authentication import BaseAuthentication
 from aiservice.core_functions import generate_random_id
-import random, httpx
 
 
 class OpenAIAssistant:
@@ -90,7 +93,7 @@ class OpenAIAssistant:
                 {"role": "user", "content":
                     {
                     "type": "text",
-                    "text": "What’s in this image?"
+                    "text": "What's in this image?"
                     },
                     {
                     "type": "image_url",
@@ -154,9 +157,7 @@ class OpenAIAssistant:
             )
             return response
 
-    def mocking_prompt(
-        self, finish_reason="stop", content="Hello, World!", model="gpt-3.5-turbo"
-    ):
+    def mocking_prompt(self, finish_reason="stop", content="Hello, World!", model="gpt-3.5-turbo"):
         """
         Method for mocking the prompt method. This method should be used for testing
         purposes only.
@@ -265,6 +266,4 @@ class OpenAIAssistant:
         if not self.open_ai_embed:
             raise ValueError("Embed model deployment name is not provided.")
 
-        return self.open_ai_embed.embeddings.create(
-            input=text, model=model, timeout=timeout
-        )
+        return self.open_ai_embed.embeddings.create(input=text, model=model, timeout=timeout)

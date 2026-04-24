@@ -1,11 +1,12 @@
 import unittest
 from datetime import datetime, timedelta
 
-from leverance import data
 from spark_core.testing.base_test_executor import BaseTestExecutor
+from sqlalchemy import select
+
+from leverance import data
 
 from .jn_notat_feedback_business_component import JNNotatFeedbackBusinessComponent
-from sqlalchemy import select
 
 
 class TestJNNotatFeedbackBusinessComponent(unittest.TestCase):
@@ -46,16 +47,10 @@ class TestJNNotatFeedbackBusinessComponent(unittest.TestCase):
 
             # Forventede værdier
             self.assertEqual(self.data["call_id"], result[0].call_id, "Korrekt call-id")
-            self.assertEqual(
-                self.data["agent_id"], result[0].agent_id, "Korrekt agent-id"
-            )
-            self.assertEqual(
-                self.data["feedback"], result[0].feedback, "Korrekt feedback"
-            )
+            self.assertEqual(self.data["agent_id"], result[0].agent_id, "Korrekt agent-id")
+            self.assertEqual(self.data["feedback"], result[0].feedback, "Korrekt feedback")
             self.assertEqual(self.data["rating"], result[0].rating, "Korrekt feedback")
-            self.assertEqual(
-                self.data["benyttet"], result[0].benyttet, "Korrekt benyttet"
-            )
+            self.assertEqual(self.data["benyttet"], result[0].benyttet, "Korrekt benyttet")
 
             # Forventet exit code
             self.assertEqual(0, return_val, "Korrekt exit code")
@@ -72,8 +67,8 @@ class TestJNNotatFeedbackBusinessComponent(unittest.TestCase):
 
             ratings = [-1, 3, 2]
             for element in ratings:
-                call_id = f"some_call_id"
-                agent_id = f"some_agent_id"
+                call_id = "some_call_id"
+                agent_id = "some_agent_id"
                 feedback = ""
                 rating = element
                 benyttet = 1
@@ -188,17 +183,17 @@ class JNNotatFeedbackExecutor(BaseTestExecutor):
         """
         Indsætter testdata i tabellen.
         """
-        for data in test_data:
+        for row in test_data:
             sql = f"""
                 INSERT INTO {komp.db}.{komp.schema}.{komp.table}
                 (call_id, agent_id, feedback, rating, benyttet, load_time)
                 VALUES (
-                    '{data["call_id"]}',
-                    '{data["agent_id"]}',
-                    '{data["feedback"]}',
-                    {data["rating"]},
-                    {data["benyttet"]},
-                    '{data["load_time"].strftime("%Y-%m-%d %H:%M:%S")}'
+                    '{row["call_id"]}',
+                    '{row["agent_id"]}',
+                    '{row["feedback"]}',
+                    {row["rating"]},
+                    {row["benyttet"]},
+                    '{row["load_time"].strftime("%Y-%m-%d %H:%M:%S")}'
                 )
             """
             komp.execute_sql(sql)

@@ -1,11 +1,11 @@
 from typing import Any
 from uuid import UUID
 
+from spark_core.components.base_component import NonSessionComponent
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+
 from leverance.core.logger_adapter import ServiceLoggerAdapter
 from leverance.core.runners.service_runner import ServiceRunner
-from spark_core.components.base_component import NonSessionComponent
-
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 
 class JNConfigBusinessComponent(NonSessionComponent, ServiceRunner):
@@ -41,15 +41,12 @@ class JNConfigBusinessComponent(NonSessionComponent, ServiceRunner):
     * slet_kr_konfiguration:            Slet konfiguration for en kunderådgiver.
     """
 
-    def __init__(self, request_uid: UUID = None, config_name=None):
-
+    def __init__(self, request_uid: UUID | None = None, config_name=None):
         # Initialize NonSessionComponent
         NonSessionComponent.__init__(self, app=None)
 
         # Initialize ServiceRunner
-        ServiceRunner.__init__(
-            self, "jn", request_uid=request_uid, config_name=config_name
-        )
+        ServiceRunner.__init__(self, "jn", request_uid=request_uid, config_name=config_name)
 
         # Variable til konfigurationer
         self.temp_prefix = self.__class__.__name__
@@ -93,7 +90,7 @@ class JNConfigBusinessComponent(NonSessionComponent, ServiceRunner):
         except Exception as e:
             self.service_logger.service_exception(
                 self,
-                f"Fejl ved hentning af konfiguration for kunderådgiver {kr_initialer}: {str(e)}",
+                f"Fejl ved hentning af konfiguration for kunderådgiver {kr_initialer}: {e!s}",
             )
 
     def indsaet_kr_konfiguration(
@@ -169,7 +166,7 @@ class JNConfigBusinessComponent(NonSessionComponent, ServiceRunner):
         except IntegrityError as e:
             self.service_logger.service_exception(
                 self,
-                f"Fejl i indsættelse af konfiguration for kunderådgiver {kr_initialer}: {str(e)}",
+                f"Fejl i indsættelse af konfiguration for kunderådgiver {kr_initialer}: {e!s}",
             )
             return (
                 "Forkert værdi forsøgt indsat",
@@ -198,6 +195,6 @@ class JNConfigBusinessComponent(NonSessionComponent, ServiceRunner):
             return 0, f"Konfiguration for {kr_initialer} blev slettet."
         except SQLAlchemyError as e:
             self.service_logger.service_exception(
-                f"Fejl ved sletning af konfiguration for kunderådgiver {kr_initialer}: {str(e)}"
+                f"Fejl ved sletning af konfiguration for kunderådgiver {kr_initialer}: {e!s}"
             )
-            return -1, f"Fejl ved sletning af konfiguration."
+            return -1, "Fejl ved sletning af konfiguration."

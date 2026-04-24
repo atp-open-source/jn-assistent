@@ -1,10 +1,9 @@
 import argparse
 import asyncio
-import os
 
+from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from azure.identity.aio import DefaultAzureCredential
 from azure.storage.queue.aio import QueueServiceClient
-from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from loguru import logger
 
 from audio_streamer.config import get_config
@@ -97,9 +96,7 @@ async def _async_main(action: str, n_queues: int, env: str) -> int:
 
     try:
         async with DefaultAzureCredential() as credential:
-            queue_service_client = get_queue_service_client(
-                config.STORAGE_ACCOUNT_NAME, credential
-            )
+            queue_service_client = get_queue_service_client(config.STORAGE_ACCOUNT_NAME, credential)
             try:
                 await process_status_queues(queue_service_client, n_queues, action)
             finally:

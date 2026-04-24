@@ -1,15 +1,15 @@
-from datetime import datetime, timedelta
 import re
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from azure.storage.blob import ContainerClient
+from azure.storage.queue import QueueClient, QueueServiceClient
 
 from leverance.core.common.azure_helper import (
     get_auth_based_on_env,
 )
 from leverance.core.logger_adapter import ServiceLoggerAdapter
 from leverance.core.runners.service_runner import ServiceRunner
-from azure.storage.queue import QueueServiceClient, QueueClient
 
 
 class JNStorageAccountBusinessComponent(ServiceRunner):
@@ -29,9 +29,7 @@ class JNStorageAccountBusinessComponent(ServiceRunner):
         self.service_name = "jn"
         self.request_uid = request_uid
         self.config_name = config_name
-        super().__init__(
-            self.service_name, self.request_uid, config_name=self.config_name
-        )
+        super().__init__(self.service_name, self.request_uid, config_name=self.config_name)
 
         # Sæt TTL til 1 time
         self.TTL = 3600
@@ -56,9 +54,7 @@ class JNStorageAccountBusinessComponent(ServiceRunner):
             )
 
             # Hent token til Azure Storage-kontoen
-            token = authentication.credential.get_token(
-                "https://storage.azure.com/.default"
-            )
+            token = authentication.credential.get_token("https://storage.azure.com/.default")
             expiration = datetime.now() + timedelta(
                 seconds=token.expires_on - datetime.now().timestamp()
             )
@@ -70,7 +66,7 @@ class JNStorageAccountBusinessComponent(ServiceRunner):
 
         except Exception as e:
             self.service_logger.service_warning(
-                self, f"Fejl ved generering af storage account token: {str(e)}"
+                self, f"Fejl ved generering af storage account token: {e!s}"
             )
             raise
 
@@ -98,9 +94,7 @@ class JNStorageAccountBusinessComponent(ServiceRunner):
         """
         queue_name_format = self._format_name(queue_name)
 
-        account_url = (
-            f"https://{self.app.config.JN_AZURE_STORAGE_ACCOUNT}.queue.core.windows.net"
-        )
+        account_url = f"https://{self.app.config.JN_AZURE_STORAGE_ACCOUNT}.queue.core.windows.net"
         authentication = get_auth_based_on_env(
             self.app,
             tenant_key_name="JN_AZURE_IDENTITY_TENANT_ID",
@@ -148,9 +142,7 @@ class JNStorageAccountBusinessComponent(ServiceRunner):
             ContainerClient: Den oprettede Azure Container klient.
         """
         # Opret account_url
-        account_url = (
-            f"https://{self.app.config.JN_AZURE_STORAGE_ACCOUNT}.blob.core.windows.net"
-        )
+        account_url = f"https://{self.app.config.JN_AZURE_STORAGE_ACCOUNT}.blob.core.windows.net"
         authentication = get_auth_based_on_env(
             self.app,
             tenant_key_name="JN_AZURE_IDENTITY_TENANT_ID",

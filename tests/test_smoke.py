@@ -40,5 +40,5 @@ def test_openai_assistant_has_expected_api() -> None:
 )
 def test_audio_streamer_imports_on_windows() -> None:
     """På Windows skal audio_streamer-pakken kunne importeres rent."""
-    import audio_streamer.streamer  # noqa: F401
+    import audio_streamer.streamer
     import audio_streamer.tray_icon  # noqa: F401

@@ -1,14 +1,16 @@
-import io, json, time
+import json
+import time
 import uuid
 from datetime import datetime as dt
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import requests
+from azure.core.credentials import AccessToken, TokenCredential
 from azure.storage.blob import BlobClient, BlobServiceClient
 from azure.storage.queue import QueueClient, QueueServiceClient
 from loguru import logger
+
 from audio_streamer.config import DevConfig, ProdConfig
-from azure.core.credentials import AccessToken, TokenCredential
 
 
 class TokenCredentialAdapter(TokenCredential):
@@ -36,9 +38,7 @@ class TokenCredentialAdapter(TokenCredential):
         Returns:
             AccessToken: Token med udløbsinformation
         """
-        return AccessToken(
-            token=self.token, expires_on=self.token_expiration.timestamp()
-        )
+        return AccessToken(token=self.token, expires_on=self.token_expiration.timestamp())
 
 
 class BaseAzureStorage:
@@ -46,9 +46,7 @@ class BaseAzureStorage:
     Azure Blob og Queue Storage implementering.
     """
 
-    def __init__(
-        self, config: Union[DevConfig, ProdConfig], agent_id: str, speaker: str
-    ):
+    def __init__(self, config: DevConfig | ProdConfig, agent_id: str, speaker: str):
         """
         Initialisér Azure storage.
 
@@ -71,8 +69,8 @@ class BaseAzureStorage:
             queue_name=self.status_audio
         )
         if self.speaker == "caller":
-            self.queue_status_client, self.queue_status_expire = (
-                self._create_queue_client(queue_name=self.status_queue)
+            self.queue_status_client, self.queue_status_expire = self._create_queue_client(
+                queue_name=self.status_queue
             )
         else:
             self.queue_status_client, self.queue_status_expire = None, None
@@ -80,9 +78,9 @@ class BaseAzureStorage:
     def _create_client(
         self,
         is_queue: bool = True,
-        queue_name: Optional[str] = None,
-        container_name: Optional[str] = None,
-    ) -> Union[Tuple[QueueClient, float], Tuple[BlobClient, float]]:
+        queue_name: str | None = None,
+        container_name: str | None = None,
+    ) -> tuple[QueueClient, float] | tuple[BlobClient, float]:
         """
         Opret Azure klient (Queue eller Blob).
         """
@@ -90,9 +88,7 @@ class BaseAzureStorage:
             raise ValueError("queue_name or container_name must be provided")
 
         resource = "queue" if is_queue else "blob"
-        account_url = (
-            f"https://{self.config.STORAGE_ACCOUNT_NAME}.{resource}.core.windows.net"
-        )
+        account_url = f"https://{self.config.STORAGE_ACCOUNT_NAME}.{resource}.core.windows.net"
         api_url = self.config.LEVERANCE_URL + "/sta_credentials"
 
         try:
@@ -135,15 +131,13 @@ class BaseAzureStorage:
             logger.exception(f"Error creating Azure client: {e}")
             raise
 
-    def _create_storage_client(
-        self, container_name: str
-    ) -> Tuple[BlobServiceClient, float]:
+    def _create_storage_client(self, container_name: str) -> tuple[BlobServiceClient, float]:
         """
         Opret Azure Blob storage klient.
         """
         return self._create_client(is_queue=False, container_name=container_name)
 
-    def _create_queue_client(self, queue_name: str) -> Tuple[QueueServiceClient, float]:
+    def _create_queue_client(self, queue_name: str) -> tuple[QueueServiceClient, float]:
         """
         Opret Azure Queue klient.
         """
@@ -164,8 +158,8 @@ class BaseAzureStorage:
         Hent Azure status Queue klienten for køen 'status-{agent_id}'.
         """
         if self.queue_status_client and dt.now() > self.queue_status_expire:
-            self.queue_status_client, self.queue_status_expire = (
-                self._create_queue_client(queue_name=self.status_queue)
+            self.queue_status_client, self.queue_status_expire = self._create_queue_client(
+                queue_name=self.status_queue
             )
         return self.queue_status_client
 
@@ -195,7 +189,7 @@ class AzureStorage:
 
     def __init__(
         self,
-        config: Union[DevConfig, ProdConfig],
+        config: DevConfig | ProdConfig,
         speaker: str,
         call_id: str,
         agent_id: str,
@@ -220,9 +214,7 @@ class AzureStorage:
         self.queue_id = queue_id
         self.cpr = cpr
         self.segment_count = 0
-        self.azure_storage = BaseAzureStorage(
-            config, agent_id=agent_id, speaker=speaker
-        )
+        self.azure_storage = BaseAzureStorage(config, agent_id=agent_id, speaker=speaker)
         self.status_audio = self.azure_storage.status_audio
         self.status_queue = self.azure_storage.status_queue
 
@@ -261,7 +253,7 @@ class AzureStorage:
                 "timestamp": time.time(),
             }
 
-    def store_segment(self, data: bytes, metadata: Dict[str, Any]) -> None:
+    def store_segment(self, data: bytes, metadata: dict[str, Any]) -> None:
         """
         Gem et segment af lyddata til Azure Blob Storage og send metadata til Queue.
 
@@ -304,9 +296,7 @@ class AzureStorage:
             self._send_status_message(slut_besked_status_agent, self.status_queue)
 
         # Send slutbesked til 'status-audio' (sker både for caller og agent)
-        slut_besked_status_audio = self._status_besked(
-            status="end", queue_name=self.status_audio
-        )
+        slut_besked_status_audio = self._status_besked(status="end", queue_name=self.status_audio)
         self._send_status_message(slut_besked_status_audio, self.status_audio)
 
     def _send_status_message(self, message: dict, queue_name: str) -> None:
@@ -340,9 +330,7 @@ class AzureStorage:
                 f"Call_id {self.call_id}: Der opstod en fejl med at sende status-besked til '{queue_name}': {e}"
             )
 
-    def _send_segment_message(
-        self, blob_name: str, size: int, metadata: Dict[str, Any]
-    ) -> None:
+    def _send_segment_message(self, blob_name: str, size: int, metadata: dict[str, Any]) -> None:
         """
         Send notifikation om segment til køen.
 
@@ -352,7 +340,6 @@ class AzureStorage:
             metadata: Metadata for segmentet
         """
         try:
-
             logger.info(f"Call_id {self.call_id}: Metadata: {metadata}")
 
             # Opret besked med alle felter som AudioSegmentInfo i transcriber har brug for
@@ -377,6 +364,4 @@ class AzureStorage:
             queue_client.send_message(json.dumps(message))
 
         except Exception as e:
-            logger.exception(
-                f"Call_id {self.call_id}: Error sending segment notification: {e}"
-            )
+            logger.exception(f"Call_id {self.call_id}: Error sending segment notification: {e}")

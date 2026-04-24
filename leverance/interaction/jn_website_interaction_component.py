@@ -1,9 +1,7 @@
 from uuid import uuid4
 
-from flask import current_app as flask_app, jsonify
-from flask import render_template
-from flask import request
-from flask import g
+from flask import current_app as flask_app
+from flask import g, jsonify, render_template, request
 
 from leverance.components.business.jn.jn_notat_business_component import (
     JNNotatBusinessComponent,
@@ -38,8 +36,8 @@ def get_ordning_from_ad_groups(ad_groups):
     groups = ad_groups or []
 
     ordninger = []
-    for g in groups:
-        ordninger.extend(AD_GROUP_TO_ORDNING.get(g, []))
+    for ad_group in groups:
+        ordninger.extend(AD_GROUP_TO_ORDNING.get(ad_group, []))
     return ordninger if ordninger else [""]
 
 
@@ -87,9 +85,7 @@ def fetch_notat_data(dagens_historik=True, ordning_list=None):
 
     # Kombinér notater og feedback
     for notat in notat_data:
-        feedback_entry = next(
-            (f for f in feedback_data if f["call_id"] == notat["call_id"]), None
-        )
+        feedback_entry = next((f for f in feedback_data if f["call_id"] == notat["call_id"]), None)
         if feedback_entry:
             notat["feedback"] = feedback_entry["feedback"]
             notat["rating"] = feedback_entry["rating"]
@@ -115,12 +111,8 @@ def notat_oversigt():
     """
     ordning_list = ["alle_ordninger"]
     dagens_historik = request.args.get("dagens_historik", "true").lower() == "true"
-    notat_data = fetch_notat_data(
-        dagens_historik=dagens_historik, ordning_list=ordning_list
-    )
-    return render_template(
-        "forside.html.jinja", args=notat_data, dagens_historik=dagens_historik
-    )
+    notat_data = fetch_notat_data(dagens_historik=dagens_historik, ordning_list=ordning_list)
+    return render_template("forside.html.jinja", args=notat_data, dagens_historik=dagens_historik)
 
 
 @interaction_bp.route("/notat_oversigt_fe", methods=["GET", "POST"])
@@ -139,9 +131,7 @@ def notat_oversigt_fe():
     ad_groups = getattr(g, "ad_groups", [])
     ordning_list = get_ordning_from_ad_groups(ad_groups)
     dagens_historik = request.args.get("dagens_historik", "true").lower() == "true"
-    notat_data = fetch_notat_data(
-        dagens_historik=dagens_historik, ordning_list=ordning_list
-    )
+    notat_data = fetch_notat_data(dagens_historik=dagens_historik, ordning_list=ordning_list)
     response_data = {
         "notater": notat_data,
     }

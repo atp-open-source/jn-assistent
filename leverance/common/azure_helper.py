@@ -1,17 +1,19 @@
 import json
 import os
 
+from dfd_azure_ml.core.clients.azure_blob_client import AzureBlobClient
+from dfd_azure_ml.core.clients.ml_auth_client import Authentication
+from ork.project_handler import get_config_for_project
+from spark_core.database.db_utils import use_access_token_for_azure_sql
+from sqlalchemy import Engine, create_engine
+
 from aiservice.authentication import (
     Authentication as clientSecretAuthentication,
+)
+from aiservice.authentication import (
     BaseAuthentication,
     ManagedIdentityAuthentication,
 )
-from dfd_azure_ml.core.clients.azure_blob_client import AzureBlobClient
-from dfd_azure_ml.core.clients.ml_auth_client import Authentication
-
-from spark_core.database.db_utils import use_access_token_for_azure_sql
-from sqlalchemy import create_engine, Engine
-from ork.project_handler import get_config_for_project
 
 
 def create_azure_blob_client(app, category, container, account_name):
@@ -19,7 +21,7 @@ def create_azure_blob_client(app, category, container, account_name):
     Initializes the AzureBlobClient and returns the instance.
     """
     try:
-        with open(app.config.KEYS_AZURE, "r") as f:
+        with open(app.config.KEYS_AZURE) as f:
             keys = json.load(f)
 
         tenant_id = keys.get("DA_SPARK_AZURE_IDENTITY_TENANT_ID", None)
@@ -64,7 +66,7 @@ def get_auth_based_on_env(
         # Initialisér ManagedIdentityAuthentication-objekt
         authentication = ManagedIdentityAuthentication()
     else:
-        with open(app.config.KEYS_AZURE, "r") as f:
+        with open(app.config.KEYS_AZURE) as f:
             keys = json.load(f)
             tenant_id = keys.get(tenant_key_name)
             client_id = keys.get(client_key_name)
@@ -103,7 +105,7 @@ def get_openai_config_based_on_env(
         version = os.getenv(version_key_name)
         deployment = os.getenv(deployment_key_name)
     else:
-        with open(app.config.KEYS_AZURE, "r") as f:
+        with open(app.config.KEYS_AZURE) as f:
             keys = json.load(f)
             endpoint = keys.get(endpoint_key_name)
             version = keys.get(version_key_name)
@@ -146,5 +148,5 @@ def opret_azure_engine(app) -> Engine:
 
         return azure_engine
     except Exception as e:
-        app.log.error(f"Fejl ved oprettelse af Azure engine: {str(e)}", exc_info=True)
-        raise Exception(f"Fejl ved oprettelse af Azure engine: {str(e)}") from e
+        app.log.error(f"Fejl ved oprettelse af Azure engine: {e!s}", exc_info=True)
+        raise Exception(f"Fejl ved oprettelse af Azure engine: {e!s}") from e

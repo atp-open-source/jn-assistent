@@ -1,9 +1,10 @@
-import unittest
 import time
+import unittest
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 from flask import Flask
+
 from leverance.components.business.jn.jn_model_business_component import (
     JNModelBusinessComponent,
 )
@@ -29,9 +30,7 @@ class TestJNModelBusinessComponent(unittest.TestCase):
 
         # Mock initialize_model
         mock_initialize_model.return_value = MagicMock()
-        self.JNModel = JNModelBusinessComponent(
-            request_uid=str(uuid4()), config_name=None
-        )
+        self.JNModel = JNModelBusinessComponent(request_uid=str(uuid4()), config_name=None)
 
     def tearDown(self):
         # Ryd Flask applikationskontext
@@ -82,7 +81,7 @@ class TestJNModelBusinessComponent(unittest.TestCase):
             for i in range(self.JNModel.max_retries)
         ]
 
-        for result, expected_result in zip(results, expected_results):
+        for result, expected_result in zip(results, expected_results, strict=False):
             self.assertEqual(
                 result,
                 expected_result,
@@ -132,7 +131,7 @@ class TestJNModelBusinessComponent(unittest.TestCase):
         ]
         expected_log = f"LLM timeoutede efter {self.JNModel.global_timeout} sekunder for call-id: {self.call_id}"
 
-        for result, expected_result in zip(results, expected_results):
+        for result, expected_result in zip(results, expected_results, strict=False):
             self.assertEqual(
                 result,
                 expected_result,
@@ -182,7 +181,7 @@ class TestJNModelBusinessComponent(unittest.TestCase):
         ]
         expected_log = f"LLM kald timeoutede efter {self.JNModel.model_kald_timeout} sekunder for call-id: {self.call_id}"
 
-        for result, expected_result in zip(results, expected_results):
+        for result, expected_result in zip(results, expected_results, strict=False):
             self.assertEqual(
                 result,
                 expected_result,
@@ -203,9 +202,7 @@ class TestJNModelBusinessComponent(unittest.TestCase):
     @patch(
         "leverance.components.business.jn.jn_model_business_component.JNPromptsBusinessComponent"
     )
-    @patch(
-        "leverance.components.business.jn.jn_model_business_component.JNConfigBusinessComponent"
-    )
+    @patch("leverance.components.business.jn.jn_model_business_component.JNConfigBusinessComponent")
     def test_predict(self, mock_jn_config, mock_jn_prompts, mock_prompt_llm):
         """
         Det testes at outputtet fra predict har det forventede format.
@@ -253,9 +250,7 @@ class TestJNModelBusinessComponent(unittest.TestCase):
             notat_prompt_id,
             notat_val_prompt_id,
             forretningsomraade,
-        ) = self.JNModel.predict(
-            samtale=samtale, call_id=self.call_id, agent_id=self.agent_id
-        )
+        ) = self.JNModel.predict(samtale=samtale, call_id=self.call_id, agent_id=self.agent_id)
 
         # Forventet output
         forventet_notat = (
@@ -268,11 +263,11 @@ class TestJNModelBusinessComponent(unittest.TestCase):
             "<br/>#"
         )
 
-        forventet_samtale = "TRANSSKRIBERET SAMTALE MELLEM BORGER/FULDMAGTSHAVER/HJÆLPER OG KUNDERÅDGIVER: "
+        forventet_samtale = (
+            "TRANSSKRIBERET SAMTALE MELLEM BORGER/FULDMAGTSHAVER/HJÆLPER OG KUNDERÅDGIVER: "
+        )
         for sentence in samtale:
-            forventet_samtale += (
-                f"\n{speaker_mapping[sentence['speaker']]}: {sentence['sentence']}"
-            )
+            forventet_samtale += f"\n{speaker_mapping[sentence['speaker']]}: {sentence['sentence']}"
 
         forventet_results_dict = {
             "response_notat": mock_prompt_llm.return_value[0],
@@ -289,9 +284,7 @@ class TestJNModelBusinessComponent(unittest.TestCase):
         }
 
         # Tjek output
-        self.assertEqual(
-            notat, forventet_notat, f"Forventede: {forventet_notat}, men fik: {notat}"
-        )
+        self.assertEqual(notat, forventet_notat, f"Forventede: {forventet_notat}, men fik: {notat}")
         self.assertEqual(
             formatted_samtale,
             forventet_samtale,
@@ -327,12 +320,8 @@ class TestJNModelBusinessComponent(unittest.TestCase):
     @patch(
         "leverance.components.business.jn.jn_model_business_component.JNPromptsBusinessComponent"
     )
-    @patch(
-        "leverance.components.business.jn.jn_model_business_component.JNConfigBusinessComponent"
-    )
-    def test_predict_tom_samtale(
-        self, mock_jn_config, mock_jn_prompts, mock_initialize_model
-    ):
+    @patch("leverance.components.business.jn.jn_model_business_component.JNConfigBusinessComponent")
+    def test_predict_tom_samtale(self, mock_jn_config, mock_jn_prompts, mock_initialize_model):
         """
         Tester at korrekt fejlmeddelelse returneres, hvis samtalen er tom.
         """
@@ -356,13 +345,13 @@ class TestJNModelBusinessComponent(unittest.TestCase):
 
         # Kald metoden
         output, _, _, notat_prompt_id, notat_val_prompt_id, forretningsomraade = (
-            self.JNModel.predict(
-                samtale=[], call_id=self.call_id, agent_id=self.agent_id
-            )
+            self.JNModel.predict(samtale=[], call_id=self.call_id, agent_id=self.agent_id)
         )
 
         # Forventet output
-        forventet_output = "Ingen samtale fundet. Journalnotat kan ikke genereres. Tjek lydindstillinger på PC."
+        forventet_output = (
+            "Ingen samtale fundet. Journalnotat kan ikke genereres. Tjek lydindstillinger på PC."
+        )
         self.assertEqual(
             output,
             forventet_output,

@@ -77,9 +77,28 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S", "N"]
-"**/_test_*.py" = ["S", "N"]
+# Tests, test-doubles og fixtures: tillad mock-passwords, mock-SQL, random-data,
+# samt mutable class-attributes (typiske testdata-konstanter).
+"tests/**" = ["S", "N", "RUF012"]
+"**/_test_*.py" = ["S", "N", "RUF012"]
 "conftest.py" = ["S"]
+
+# audio_streamer kalder interne Genesys-/tray-endpoints på localhost — her
+# accepterer vi manglende timeout og deaktiveret TLS-verifikation.
+"audio_streamer/**" = ["S113", "S501"]
+
+# aiservice bruger `random` til at generere mock-IDs og dummy-tokens,
+# ikke til kryptografiske formål.
+"aiservice/**" = ["S311"]
+
+# Business-komponenterne bygger interne SQL-strenge med hårdkodede
+# tabel-/kolonne-navne (ingen bruger-input), og sender navnet på en secret
+# (ikke selve værdien) som kwarg.
+"leverance/components/business/**" = ["S106", "S608"]
+
+# Alembic-/migrations-scripts har automatisk genererede hash-navne og
+# kører import-logik efter en config-blok.
+"leverance/prompt/*.py" = ["N999", "E402"]
 
 [tool.ruff.format]
 quote-style = "double"

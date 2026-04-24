@@ -6,39 +6,37 @@
 #   url       = {https://hf.co/datasets/alexandrainst/coral},
 # }
 
-import os
-from pathlib import Path
-import time
+import datetime as dt
 import json
 import logging
-import datetime as dt
-from uuid import uuid4
+import os
 import random
+import time
+from pathlib import Path
+from uuid import uuid4
 
 import gevent
-from gevent.event import Event
-from gevent.queue import Queue
-from gevent.pool import Pool
-from locust import HttpUser, task, between
-
-from audio_streamer.config import BaseConfig
-
 from clients.audio_streamer_webservice_client import AudioStreamerWebserviceClient
-from clients.frontend_webservice_client import FrontendWebserviceClient
-from clients.azure_storage_account_client import AzureStorageAccountClient
 from clients.azure_openai_transcriber_client import AzureOpenAITranscriberClient
+from clients.azure_storage_account_client import AzureStorageAccountClient
 from clients.base_client import UserContext
-
+from clients.frontend_webservice_client import FrontendWebserviceClient
+from gevent.event import Event
+from gevent.pool import Pool
+from gevent.queue import Queue
+from locust import HttpUser, between, task
 from parameters import (
-    TIMESTAMP,
-    NUM_WORKERS,
-    MIN_WAIT_TIME,
-    MAX_WAIT_TIME,
     CALL_DURATION_RANGES,
     CALL_DURATION_WEIGHTS,
-    MOCK_TRANSCRIPTION,
+    MAX_WAIT_TIME,
+    MIN_WAIT_TIME,
     MOCK_PROCESS_CALL,
+    MOCK_TRANSCRIPTION,
+    NUM_WORKERS,
+    TIMESTAMP,
 )
+
+from audio_streamer.config import BaseConfig
 
 
 class BaseJNHttpUser(HttpUser):
@@ -147,7 +145,7 @@ class BaseJNHttpUser(HttpUser):
         """
 
         # Lav et unikt call_id
-        self.call_id = f"loadtest_{TIMESTAMP}-{str(uuid4())}-{self.agent_id}"
+        self.call_id = f"loadtest_{TIMESTAMP}-{uuid4()!s}-{self.agent_id}"
 
         # Registrer opkaldet
         if hasattr(self.environment, "active_calls") and isinstance(
@@ -159,9 +157,7 @@ class BaseJNHttpUser(HttpUser):
         self.fetched_notat_event.clear()
 
         # Opret webservice client
-        audio_streamer_webservice_client = AudioStreamerWebserviceClient(
-            self._get_user_context()
-        )
+        audio_streamer_webservice_client = AudioStreamerWebserviceClient(self._get_user_context())
 
         # Hent kunderådgiverens config
         kr_config = audio_streamer_webservice_client.get_config()
@@ -182,9 +178,7 @@ class BaseJNHttpUser(HttpUser):
 
         # Dræb eksisterende greenlets i audio_streamer_pool hvis der er nogen
         if len(self.audio_streamer_pool) > 0:
-            logging.warning(
-                "audio_streamer_pool er ikke tom, dræber eksisterende greenlets..."
-            )
+            logging.warning("audio_streamer_pool er ikke tom, dræber eksisterende greenlets...")
             self.audio_streamer_pool.kill()
 
         # Start greenlets til at enqueue data og processere køer
@@ -209,9 +203,7 @@ class BaseJNHttpUser(HttpUser):
 
         if not MOCK_PROCESS_CALL:
             # Kald /process_call endpoint
-            self.audio_streamer_pool.spawn(
-                audio_streamer_webservice_client.process_call
-            )
+            self.audio_streamer_pool.spawn(audio_streamer_webservice_client.process_call)
         else:
             # Kald health-check som mock og sæt flag ved success
             def mock_process_call():
@@ -219,7 +211,7 @@ class BaseJNHttpUser(HttpUser):
                 if health_check_success:
                     self.fetched_notat_event.set()
                 else:
-                    logging.error(f"/health-check fejlede")
+                    logging.error("/health-check fejlede")
 
             self.audio_streamer_pool.spawn(mock_process_call)
 
@@ -229,9 +221,7 @@ class BaseJNHttpUser(HttpUser):
         self.fetch_notat_time = time.perf_counter()
 
         if not success:
-            logging.error(
-                f"Timeout i at vente på at FE hentede notat for call_id: {self.call_id}"
-            )
+            logging.error(f"Timeout i at vente på at FE hentede notat for call_id: {self.call_id}")
 
         # Log svartiden fra opkaldets afslutning til notatet er hentet af FE
         self.environment.events.request.fire(
@@ -261,12 +251,11 @@ class BaseJNHttpUser(HttpUser):
         start_time = time.perf_counter()
 
         while not self.stopped:
-
             # Hent status fra /fetch_status endpoint
             status = fe_webservice_client.fetch_status(last_seen_msg=last_seen_msg)
 
             if status is None:
-                logging.error(f"Fejl ved hentning af status fra /fetch_status")
+                logging.error("Fejl ved hentning af status fra /fetch_status")
                 gevent.sleep(POLL_INTERVAL_FAST)
                 continue
 
@@ -326,9 +315,7 @@ class BaseJNHttpUser(HttpUser):
 
         jsonl_data = ""
         # Sorter resultater efter timestamp før opbygning af JSONL
-        sorted_results = sorted(
-            transcription_results, key=lambda x: x.get("timestamp", 0)
-        )
+        sorted_results = sorted(transcription_results, key=lambda x: x.get("timestamp", 0))
         line_data_start = {
             "status": "start",
             "call_id": self.call_id,
@@ -355,9 +342,7 @@ class BaseJNHttpUser(HttpUser):
             try:
                 jsonl_data += json.dumps(line_data, ensure_ascii=False) + "\n"
             except Exception as json_e:
-                logging.error(
-                    f"Fejl ved konvertering af resultat til JSON: {result} - {json_e}"
-                )
+                logging.error(f"Fejl ved konvertering af resultat til JSON: {result} - {json_e}")
                 continue
 
         line_data_end = {
@@ -433,9 +418,7 @@ class BaseJNHttpUser(HttpUser):
         )
 
         # Send start-call status
-        storage_account_client.send_status_to_queue(
-            "start-call", audio_streamer_webservice_client
-        )
+        storage_account_client.send_status_to_queue("start-call", audio_streamer_webservice_client)
 
         transcription_results = []
 
@@ -454,9 +437,7 @@ class BaseJNHttpUser(HttpUser):
                 break
 
         # Send end-call status
-        storage_account_client.send_status_to_queue(
-            "end-call", audio_streamer_webservice_client
-        )
+        storage_account_client.send_status_to_queue("end-call", audio_streamer_webservice_client)
 
         # Transskribér sidste lyd
         result = openai_transcriber_client.transcribe(
@@ -468,7 +449,6 @@ class BaseJNHttpUser(HttpUser):
 
         # Upload transskribering til blob storage
         if transcription_results:
-
             jsonl_data = self._build_transcriptions_jsonl(transcription_results)
 
             if jsonl_data:
@@ -482,9 +462,7 @@ class BaseJNHttpUser(HttpUser):
                     audio_streamer_webservice_client,
                 )
                 if not upload_success:
-                    logging.error(
-                        f"Kunne ikke uploade transskriberingsblob: {blob_name}"
-                    )
+                    logging.error(f"Kunne ikke uploade transskriberingsblob: {blob_name}")
         else:
             logging.warning(
                 f"Ingen transskriberingsresultater for call_id: {self.call_id}, speaker: {speaker}"

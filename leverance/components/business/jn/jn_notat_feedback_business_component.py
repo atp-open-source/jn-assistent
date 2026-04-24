@@ -1,14 +1,14 @@
-from uuid import UUID
-from typing import Any
 from datetime import date
-from dateutil.relativedelta import relativedelta
+from typing import Any
+from uuid import UUID
 
+from dateutil.relativedelta import relativedelta
+from spark_core.components.base_component import NonSessionComponent
+from spark_core.components.core_types import OutputTable
 from sqlalchemy import exc
 
-from leverance.core.runners.service_runner import ServiceRunner
 from leverance.core.logger_adapter import ServiceLoggerAdapter
-from spark_core.components.core_types import OutputTable
-from spark_core.components.base_component import NonSessionComponent
+from leverance.core.runners.service_runner import ServiceRunner
 
 
 class JNNotatFeedbackBusinessComponent(NonSessionComponent, ServiceRunner):
@@ -35,15 +35,12 @@ class JNNotatFeedbackBusinessComponent(NonSessionComponent, ServiceRunner):
 
     """
 
-    def __init__(self, request_uid: UUID = None, config_name=None):
-
+    def __init__(self, request_uid: UUID | None = None, config_name=None):
         # Initialisér NonSessionComponent
         NonSessionComponent.__init__(self, app=None)
 
         # Initialisér ServiceRunner
-        ServiceRunner.__init__(
-            self, "jn", request_uid=request_uid, config_name=config_name
-        )
+        ServiceRunner.__init__(self, "jn", request_uid=request_uid, config_name=config_name)
 
         # Logger
         self.service_logger = ServiceLoggerAdapter(self.app.log)
@@ -53,9 +50,7 @@ class JNNotatFeedbackBusinessComponent(NonSessionComponent, ServiceRunner):
         self.schema = "jn"
         self.table = "notat_feedback"
 
-        self.output_tables = [
-            OutputTable(db=self.db, schema=self.schema, table=self.table)
-        ]
+        self.output_tables = [OutputTable(db=self.db, schema=self.schema, table=self.table)]
 
         # Antal dage tilbage i tid for hent_feedback (2 kalendermåneder)
         two_months_ago = date.today() - relativedelta(months=2)
@@ -76,7 +71,7 @@ class JNNotatFeedbackBusinessComponent(NonSessionComponent, ServiceRunner):
         # Fjern rating hvis allerede findes en i jn.notat_feedback
         delete_query = f"""
             DELETE FROM {self.db}.{self.schema}.{self.table}
-            WHERE call_id = '{call_id}' 
+            WHERE call_id = '{call_id}'
             AND agent_id = '{agent_id}'
             AND rating <> -1
         """

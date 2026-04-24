@@ -58,23 +58,24 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Installér PDM
-        run: pip install pdm==2.19.2
-
-      - name: Installér workspace (Linux — uden Windows-ekstras)
-        if: runner.os != 'Windows'
-        run: pdm install --dev --no-lock
-
-      - name: Installér workspace + Windows-ekstras (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
+      - name: Installér workspace-medlemmer og dev-afhængigheder
+        # PDM's `workspace`-opsætning er ikke en standard-feature og fejler ved
+        # ren `pdm install` uden gyldig lockfile (workspace-medlemmerne findes
+        # ikke på PyPI). Vi pip-installerer derfor de lokale pakker i editable
+        # mode plus dev-værktøjerne direkte.
+        shell: bash
         run: |
-          # Lyd-afhængigheder (PortAudio m.m.) bruges kun på Windows og
-          # følger med pyaudio-wheels, så `pdm install` er tilstrækkeligt.
-          pdm install --dev --no-lock -G :all
+          python -m pip install --upgrade pip
+          pip install -e ./aiservice
+          pip install -e ./leverance
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            pip install -e "./audio_streamer[windows]"
+          fi
+          pip install pytest pytest-cov freezegun numpy
 
       - name: Kør pytest
-        run: pdm run pytest -ra --maxfail=1
+        shell: bash
+        run: pytest -ra --maxfail=1
 
       - name: Upload coverage (hvis genereret)
         if: always()

@@ -122,11 +122,11 @@ class TestJNTextProcessorBusinessComponent(unittest.TestCase):
             "STATUS": "<strong>STATUS</strong><br/>Dette er den endelige status.<br/>Endnu en statussætning.<br/>",
         }
 
-        for header, html_str in html_str.items():
+        for header, produceret_html in html_str.items():
             self.assertEqual(
-                html_str,
+                produceret_html,
                 expected_html_strings[header],
-                f"Forventede: {expected_html_strings[header]}, men fik: {html_str}",
+                f"Forventede: {expected_html_strings[header]}, men fik: {produceret_html}",
             )
 
     def test_clean_notat(self):

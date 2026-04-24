@@ -1,5 +1,6 @@
 import re
 from uuid import UUID
+
 import nltk
 
 from leverance.components.functions.speaker_mapping_function import speaker_mapping
@@ -13,7 +14,6 @@ class JNTextProcessorBusinessComponent(ServiceRunner):
     """
 
     def __init__(self, request_uid: UUID, config_name=None) -> None:
-
         # Initialisér UID og servicenavn
         self.service_name = "jn"
         self.request_uid = request_uid
@@ -53,10 +53,7 @@ class JNTextProcessorBusinessComponent(ServiceRunner):
         formatted_string = (
             "TRANSSKRIBERET SAMTALE MELLEM BORGER/FULDMAGTSHAVER/HJÆLPER OG KUNDERÅDGIVER: \n"
             + "\n".join(
-                [
-                    f"{speaker_mapping(entry['speaker'])}: {entry['sentence']}"
-                    for entry in samtale
-                ]
+                [f"{speaker_mapping(entry['speaker'])}: {entry['sentence']}" for entry in samtale]
             )
         )
 
@@ -89,9 +86,7 @@ class JNTextProcessorBusinessComponent(ServiceRunner):
         nltk_sentences = nltk.sent_tokenize(text, language="danish")
 
         # Anvend regex-baseret raffinering til edgecases
-        refined_sentences = [
-            part for sent in nltk_sentences for part in self._refine_text(sent)
-        ]
+        refined_sentences = [part for sent in nltk_sentences for part in self._refine_text(sent)]
 
         # Kombinér sætninger, der ikke afsluttes med punktum
         sentences = []
@@ -111,9 +106,7 @@ class JNTextProcessorBusinessComponent(ServiceRunner):
 
         return sentences
 
-    def _remove_sentence_with_phrase(
-        self, sentences: list[str], phrases: list[str]
-    ) -> list[str]:
+    def _remove_sentence_with_phrase(self, sentences: list[str], phrases: list[str]) -> list[str]:
         """
         Fjerner sætninger fra en tekst, der indeholder en af de angivne fraser.
         """
@@ -142,7 +135,7 @@ class JNTextProcessorBusinessComponent(ServiceRunner):
 
         # Tilføj 'VURDERING' som overskrift efter 'OPLYSNINGER'
         if header == "OPLYSNINGER":
-            html_str += f"<br/><strong>VURDERING</strong><br/>-----<br/><br/>"
+            html_str += "<br/><strong>VURDERING</strong><br/>-----<br/><br/>"
 
         return html_str
 
@@ -151,7 +144,8 @@ class JNTextProcessorBusinessComponent(ServiceRunner):
         Fjerner citationstegn fra notatet, så det kan gemmes i databasen
         uden der opstår fejl.
         """
-        return re.sub(r'[\x00-\x1F"\'´`]+', "", notat)
+        # Acute accent og backtick fjernes bevidst — derfor noqa: RUF001.
+        return re.sub(r'[\x00-\x1F"\'´`]+', "", notat)  # noqa: RUF001
 
     def add_stamp(self) -> str:
         """

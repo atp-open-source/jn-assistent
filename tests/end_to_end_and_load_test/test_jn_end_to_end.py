@@ -7,28 +7,29 @@
 # }
 
 
-import os
-import sys
+import contextlib
 import json
-import time
-import wave
+import os
 import queue
+import sys
 import threading
+import time
 import traceback
-from uuid import uuid4
+import wave
 from datetime import datetime
+from timeit import default_timer
+from unittest import TestCase
+from uuid import uuid4
 
 import numpy as np
 import requests
-from loguru import logger
-from datasets import load_dataset, Audio
 import soundfile as sf
+from datasets import Audio, load_dataset
 from dotenv import load_dotenv
+from loguru import logger
 
 from audio_streamer.config import get_config
 from audio_streamer.openai_transcriber import AzureOpenAITranscriber
-from unittest import TestCase
-from timeit import default_timer
 
 # Load miløvariabler fra .env
 load_dotenv(override=True)
@@ -57,9 +58,7 @@ class EndToEndTestJN:
         4. Det tjekkes, at notatudkastet er genereret.
     """
 
-    def __init__(
-        self, dataset="test", streaming=True, n_files=20, controller_version="onprem"
-    ):
+    def __init__(self, dataset="test", streaming=True, n_files=20, controller_version="onprem"):
         """
         Initialiserer end-to-end testen med konfiguration for lyddata.
 
@@ -100,9 +99,7 @@ class EndToEndTestJN:
         # Stier til midlertidige filer
         self.temp_dir = os.path.join(os.path.expanduser("~"), "test_temp")
         os.makedirs(self.temp_dir, exist_ok=True)
-        self.audio_filename = os.path.join(
-            self.temp_dir, f"coral_sample_{self.agent_id}.wav"
-        )
+        self.audio_filename = os.path.join(self.temp_dir, f"coral_sample_{self.agent_id}.wav")
         self.combined_file_name = os.path.join(
             self.temp_dir, f"output_combined_{self.agent_id}.wav"
         )
@@ -111,9 +108,7 @@ class EndToEndTestJN:
         logger.info(
             f"[JN END-TO-END-TEST INFO]: End-To-End Test initialiseret for call_id: {self.call_id} med controller_version: '{self.controller_version}'"
         )
-        logger.info(
-            f"[JN END-TO-END-TEST INFO]: Test konfiguration - config {self.config}"
-        )
+        logger.info(f"[JN END-TO-END-TEST INFO]: Test konfiguration - config {self.config}")
 
     def _log_error(self, error_msg: str):
         """
@@ -161,7 +156,7 @@ class EndToEndTestJN:
             sample = list(common_voice[self.dataset].take(self.n_files))
 
             # Loop gennem alle lydfilerne og gem dem i den kombinerede lydfil
-            for idx, s in enumerate(sample):
+            for _idx, s in enumerate(sample):
                 audio = s["audio"]["array"]
                 sample_rate = s["audio"]["sampling_rate"]
                 sf.write(self.audio_filename, audio, sample_rate)
@@ -178,7 +173,9 @@ class EndToEndTestJN:
                 os.remove(self.audio_filename)
 
         except Exception as e:
-            error_msg = f"Fejl under indlaesning af CoRal datasaet eller kombination af lydfiler: {e}"
+            error_msg = (
+                f"Fejl under indlaesning af CoRal datasaet eller kombination af lydfiler: {e}"
+            )
             self._log_error(error_msg)
             raise RuntimeError(error_msg) from e
 
@@ -188,7 +185,9 @@ class EndToEndTestJN:
 
             # Kontrollér at config og streamer_version er hentet korrekt
             if not config or not streamer_version:
-                error_msg = f"Kunne ikke hente Config eller 'streamer-version' for call-id '{self.call_id}'"
+                error_msg = (
+                    f"Kunne ikke hente Config eller 'streamer-version' for call-id '{self.call_id}'"
+                )
                 self._log_error(error_msg)
                 raise RuntimeError(error_msg)
 
@@ -205,7 +204,9 @@ class EndToEndTestJN:
                     self.args, config, "caller", self.controller_version
                 )
             except Exception as e:
-                error_msg = f"Kunne ikke initialisere OpenAI Transcriber for call-id '{self.call_id}': {e}"
+                error_msg = (
+                    f"Kunne ikke initialisere OpenAI Transcriber for call-id '{self.call_id}': {e}"
+                )
                 self._log_error(error_msg)
                 raise RuntimeError(error_msg) from e
 
@@ -245,7 +246,9 @@ class EndToEndTestJN:
                 caller_thread.start()
 
             except Exception as e:
-                error_msg = f"Fejl under start af transskriberingstråde for call-id '{self.call_id}': {e}"
+                error_msg = (
+                    f"Fejl under start af transskriberingstråde for call-id '{self.call_id}': {e}"
+                )
                 self._log_error(error_msg)
                 raise RuntimeError(error_msg) from e
 
@@ -265,7 +268,6 @@ class EndToEndTestJN:
             try:
                 # Åbn den kombinerede lydfil
                 with wave.open(self.combined_file_name, "rb") as wav_file:
-
                     # Udtræk metadata fra lydfilen
                     channels = wav_file.getnchannels()
                     sample_width = wav_file.getsampwidth()
@@ -311,9 +313,7 @@ class EndToEndTestJN:
                 )
 
             except Exception as e:
-                error_msg = (
-                    f"Fejl under streaming af lyddata for call-id '{self.call_id}': {e}"
-                )
+                error_msg = f"Fejl under streaming af lyddata for call-id '{self.call_id}': {e}"
                 self._log_error(error_msg)
                 self.stop_event.set()
                 if agent_thread:
@@ -335,7 +335,9 @@ class EndToEndTestJN:
                 time.sleep(1)
 
             if not (self.agent_queue.empty() and self.caller_queue.empty()):
-                error_msg = f"Timeout under afventning af transskribering for call-id '{self.call_id}'"
+                error_msg = (
+                    f"Timeout under afventning af transskribering for call-id '{self.call_id}'"
+                )
                 self._log_error(error_msg)
                 self.stop_event.set()
                 if agent_thread:
@@ -414,15 +416,11 @@ class EndToEndTestJN:
 
             # Forsøg at slette den kombinerede lydfil hvis den eksisterer
             if os.path.exists(self.combined_file_name):
-                try:
+                with contextlib.suppress(Exception):
                     os.remove(self.combined_file_name)
-                except Exception:
-                    pass
 
             # Log fejlen og kast den videre så pipeline bliver afbrudt
-            error_msg = (
-                f"Fejl under simulate_audio_streaming for call-id '{self.call_id}': {e}"
-            )
+            error_msg = f"Fejl under simulate_audio_streaming for call-id '{self.call_id}': {e}"
             self._log_error(error_msg)
             raise RuntimeError(error_msg) from e
 
@@ -749,20 +747,14 @@ def main():
                         f"[JN END-TO-END-TEST INFO]: JN End-To-End Test gennemfoert succesfuldt for controller_version '{controller_version}' paa {duration:.2f} sekunder"
                     )
                     perf_summary = e2e_test.performance_summary()
-                    logger.info(
-                        f"[JN END-TO-END-TEST INFO]: Performance summary: \n{perf_summary}"
-                    )
+                    logger.info(f"[JN END-TO-END-TEST INFO]: Performance summary: \n{perf_summary}")
 
             except Exception as e:
                 end_time = datetime.now()
                 duration = (end_time - start_time).total_seconds()
-                error_msg = (
-                    f"Fejl under test af controller_version '{controller_version}': {e}"
-                )
+                error_msg = f"Fejl under test af controller_version '{controller_version}': {e}"
                 logger.error(f"[JN END-TO-END-TEST ERROR]: {error_msg}")
-                logger.error(
-                    f"[JN END-TO-END-TEST ERROR]: Traceback: {traceback.format_exc()}"
-                )
+                logger.error(f"[JN END-TO-END-TEST ERROR]: Traceback: {traceback.format_exc()}")
 
                 # Gem testresultat for fejlet test
                 test_results[controller_version] = {
@@ -797,9 +789,7 @@ def main():
             error_occurred = True
 
     except Exception as e:
-        logger.error(
-            f"[JN END-TO-END-TEST ERROR]: Fejl under koersel af JN End-To-End Test: {e}"
-        )
+        logger.error(f"[JN END-TO-END-TEST ERROR]: Fejl under koersel af JN End-To-End Test: {e}")
         logger.error(f"[JN END-TO-END-TEST ERROR]: Traceback: {traceback.format_exc()}")
         error_occurred = True
         exit_code = 1

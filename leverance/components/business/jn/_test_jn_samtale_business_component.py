@@ -1,11 +1,14 @@
 import unittest
 from datetime import datetime
-from leverance import data
-from spark_core.testing.base_test_executor import BaseTestExecutor
-from .jn_samtale_business_component import JNSamtaleBusinessComponent
+
 from dateutil.relativedelta import relativedelta
 from freezegun import freeze_time
+from spark_core.testing.base_test_executor import BaseTestExecutor
 from sqlalchemy import select
+
+from leverance import data
+
+from .jn_samtale_business_component import JNSamtaleBusinessComponent
 
 
 class TestJNSamtaleBusinessComponent(unittest.TestCase):
@@ -61,9 +64,7 @@ class TestJNSamtaleBusinessComponent(unittest.TestCase):
 
             for i in range(len(self.samtale)):
                 # Tjek at data i tabellen matcher de indtastede værdier
-                self.assertEqual(
-                    self.data["call_id"], result[i].call_id, "Korrekt call_id"
-                )
+                self.assertEqual(self.data["call_id"], result[i].call_id, "Korrekt call_id")
                 self.assertEqual(self.data["queue"], result[i].queue, "Korrekt queue")
                 self.assertEqual(
                     self.data["kr_initialer"],
@@ -146,9 +147,7 @@ class TestJNSamtaleBusinessComponent(unittest.TestCase):
                         "Korrekt call_id",
                     )
 
-                    self.assertEqual(
-                        input_data[i]["queue"], result[0].queue, "Korrekt queue"
-                    )
+                    self.assertEqual(input_data[i]["queue"], result[0].queue, "Korrekt queue")
                     self.assertEqual(
                         input_data[i]["kr_initialer"],
                         result[0].kr_initialer,
@@ -224,21 +223,21 @@ class TestJNSamtaleBusinessComponent(unittest.TestCase):
 
             # Det verificeres at tabellen indeholder forventet data
             for i in range(len(input_data)):
-                self.assertEqual(self.data["queue"], result[i].queue, f"Korrekt queue")
+                self.assertEqual(self.data["queue"], result[i].queue, "Korrekt queue")
                 self.assertEqual(
                     self.data["kr_initialer"],
                     result[i].kr_initialer,
-                    f"Korrekt kr_initialer",
+                    "Korrekt kr_initialer",
                 )
                 self.assertEqual(
                     input_data[i]["call_id"],
                     result[i].call_id,
-                    f"Korrekt call-id",
+                    "Korrekt call-id",
                 )
                 self.assertEqual(
                     forventede_tekststykker[i],
                     result[i].tekststykke,
-                    f"Korrekt teksttykke",
+                    "Korrekt teksttykke",
                 )
 
 
@@ -257,9 +256,7 @@ class JNSamtaleExecutor(BaseTestExecutor):
         super().__exit__(exc_type, exc_val, exc_tb)
 
     def delete_testdata(self):
-        self.db_dfd_leverance_forretning.delete_from_table(
-            data.leverance.business.jn.t_samtale
-        )
+        self.db_dfd_leverance_forretning.delete_from_table(data.leverance.business.jn.t_samtale)
 
         self.db_dfd_leverance_forretning.session.commit()
 

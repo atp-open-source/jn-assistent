@@ -1,17 +1,24 @@
-import io, json, os, queue, sys, threading, time
-from typing import Any, Dict, List, Union
-from pydantic import BaseModel
-from loguru import logger
+import io
+import json
+import os
+import queue
+import sys
+import threading
+import time
+from typing import Any
 from uuid import uuid4
+
+import requests
+import urllib3
+import win32con
 
 # Tilføj imports til systembakkeikon
 import win32gui
-import win32con
+from loguru import logger
+from pydantic import BaseModel
 
-from audio_streamer.config import BaseConfig, get_config, Metadata
+from audio_streamer.config import BaseConfig, Metadata, get_config
 from audio_streamer.tray_icon import TrayIcon
-import requests
-import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -42,7 +49,7 @@ def hide_console_window():
         if hwnd != 0:
             win32gui.ShowWindow(hwnd, win32con.SW_HIDE)
         else:
-            logger.warning(f"Kunne ikke finde vinduet audio_streamer.exe")
+            logger.warning("Kunne ikke finde vinduet audio_streamer.exe")
     except Exception as e:
         logger.exception(f"Der opstod en fejl med at skjule konsolvindue: {e}")
 
@@ -60,7 +67,7 @@ class CommandArgs(BaseModel):
     Klasse til kommandolinje-argumenter.
     """
 
-    startRecording: bool = False
+    startRecording: bool = False  # noqa: N815 — matcher Genesys-CLI-argumentets navn
     AgentID: str
     CallID: str
     Queue: str
@@ -73,9 +80,7 @@ class AudioRecorder:
     Basisklasse for selve lydoptagelsen.
     """
 
-    def __init__(
-        self, stop_event: threading.Event, data_queue: queue.Queue, args: Dict[str, Any]
-    ):
+    def __init__(self, stop_event: threading.Event, data_queue: queue.Queue, args: dict[str, Any]):
         """
         Initialisér lydoptager.
 
@@ -132,7 +137,7 @@ class MicrophoneRecorder(AudioRecorder):
         """
         Start optagelse af lyd.
         """
-        from pyaudio import PyAudio, paInt16, paContinue
+        from pyaudio import PyAudio, paContinue, paInt16
 
         FORMAT = paInt16
         CHANNELS = 1
@@ -143,9 +148,7 @@ class MicrophoneRecorder(AudioRecorder):
         args_log = self.args.copy()
         args_log.pop("CPR", None)
 
-        logger.info(
-            f"Call_id {self.call_id}: Starter optagelse fra mikrofon: {args_log}"
-        )
+        logger.info(f"Call_id {self.call_id}: Starter optagelse fra mikrofon: {args_log}")
 
         # Send indledende metadata
         metadata = self._create_metadata(
@@ -177,9 +180,7 @@ class MicrophoneRecorder(AudioRecorder):
                         lyd = buffer.getvalue()
                         # Vi tjekker om der ikke er kommet noget lyd ind
                         if max(lyd) == min(lyd):
-                            tid_siden_sidste_lyd += len(lyd) / (
-                                RATE * CHANNELS * SAMPLE_WIDTH
-                            )
+                            tid_siden_sidste_lyd += len(lyd) / (RATE * CHANNELS * SAMPLE_WIDTH)
                             if tid_siden_sidste_lyd >= self.max_tid_uden_lyd:
                                 tray_icon.notify(
                                     "Ingen lyd fra mikrofonen de sidste 30 sekunder. Tjek lydindstillinger",
@@ -217,14 +218,10 @@ class MicrophoneRecorder(AudioRecorder):
             # Sikr at eventuelle resterende data sendes
             if buffer.tell() > 0:
                 self.queue.put(buffer.getvalue())
-                logger.info(
-                    f"Call_id {self.call_id}: Resterende mikrofonlyd blev sendt til køen."
-                )
+                logger.info(f"Call_id {self.call_id}: Resterende mikrofonlyd blev sendt til køen.")
 
         except Exception as e:
-            logger.exception(
-                f"Call_id {self.call_id}: Fejl i optagelse fra mikrofonen: {e}"
-            )
+            logger.exception(f"Call_id {self.call_id}: Fejl i optagelse fra mikrofonen: {e}")
         finally:
             metadata = self._create_metadata(
                 status="end",
@@ -244,9 +241,7 @@ class MicrophoneRecorder(AudioRecorder):
                     f"Call_id {self.call_id}: Fejl ved afslutning af mikrofonoptagelse: {e}"
                 )
 
-            logger.info(
-                f"Call_id {self.call_id}: Optagelse fra mikrofonen er afsluttet."
-            )
+            logger.info(f"Call_id {self.call_id}: Optagelse fra mikrofonen er afsluttet.")
 
 
 class SpeakerRecorder(AudioRecorder):
@@ -254,7 +249,7 @@ class SpeakerRecorder(AudioRecorder):
     Optager lyd fra højttalere (borgers lyd).
     """
 
-    def get_speakers_info(self) -> Dict[str, Any]:
+    def get_speakers_info(self) -> dict[str, Any]:
         """
         Hent enhedsinformation om højttalere.
         """
@@ -263,9 +258,7 @@ class SpeakerRecorder(AudioRecorder):
         with PyAudio() as p:
             wasapi_info = p.get_host_api_info_by_type(paWASAPI)
 
-            default_speakers = p.get_device_info_by_index(
-                wasapi_info["defaultOutputDevice"]
-            )
+            default_speakers = p.get_device_info_by_index(wasapi_info["defaultOutputDevice"])
 
             loopback_device = None
             for device in p.get_loopback_device_info_generator():
@@ -278,8 +271,8 @@ class SpeakerRecorder(AudioRecorder):
         """
         Start optagelse af lyd fra højttalere ved hjælp af sounddevice.
         """
-        from pyaudiowpatch import PyAudio, get_sample_size, paInt16, paWASAPI
         from pyaudio import paContinue
+        from pyaudiowpatch import PyAudio, get_sample_size, paInt16
 
         # Fjern CPR fra logging
         args_log = self.args.copy()
@@ -339,16 +332,12 @@ class SpeakerRecorder(AudioRecorder):
                     stream_callback=callback,
                 )
 
-                logger.info(
-                    f"Call_id {self.call_id}: Optagelse af højttaler er startet."
-                )
+                logger.info(f"Call_id {self.call_id}: Optagelse af højttaler er startet.")
 
                 # Vent på at stop_event er sat
                 self.stop_event.wait()
 
-                logger.info(
-                    f"Call_id {self.call_id}: Stopper optagelse fra højttalere (borger)."
-                )
+                logger.info(f"Call_id {self.call_id}: Stopper optagelse fra højttalere (borger).")
 
                 # Sikr at eventuelle resterende data sendes
                 if buffer.tell() > 0:
@@ -368,9 +357,7 @@ class SpeakerRecorder(AudioRecorder):
                 speaker="caller",
             )
             self.queue.put(metadata)
-            logger.info(
-                f"Call_id {self.call_id}: Afslutter optagelse fra højttaler (borger)"
-            )
+            logger.info(f"Call_id {self.call_id}: Afslutter optagelse fra højttaler (borger)")
             try:
                 stream.stop_stream()
                 stream.close()
@@ -382,7 +369,7 @@ class SpeakerRecorder(AudioRecorder):
             logger.info(f"Call_id {self.call_id}: Højttaleroptagelse er afsluttet.")
 
 
-def parse_args(args: List[str]) -> CommandArgs:
+def parse_args(args: list[str]) -> CommandArgs:
     """
     Parsér kommandolinje-argumenter.
 
@@ -411,7 +398,7 @@ class SimpleRecordingManager:
     Forenklet manager til lydoptagelsesprocesser.
     """
 
-    def __init__(self, args: Dict[str, str], config: BaseConfig):
+    def __init__(self, args: dict[str, str], config: BaseConfig):
         """
         Initialisér optagelsesmanager.
 
@@ -426,9 +413,7 @@ class SimpleRecordingManager:
         self.caller_queue = queue.Queue()
         self.agent_queue = queue.Queue()
         self.threads = []
-        self.flag_file = os.path.join(
-            os.path.expanduser("~"), f"simple-flag-{args['AgentID']}.txt"
-        )
+        self.flag_file = os.path.join(os.path.expanduser("~"), f"simple-flag-{args['AgentID']}.txt")
         # Lokationen lyden sendes til, standard er openai
         self.loc = "openai"
         # Tilføj en reference til transcriber-instansen hvis brugt
@@ -495,7 +480,7 @@ class SimpleRecordingManager:
         # Vi venter 3 sekunder for at sikre alt data et kommet ned i køen
         sleep_time = 0.1
         total_sleep_time = 3 / sleep_time
-        for i in range(int(total_sleep_time)):
+        for _i in range(int(total_sleep_time)):
             time.sleep(sleep_time)
             if data_queue.empty():
                 continue
@@ -521,9 +506,7 @@ class SimpleRecordingManager:
                 f"Call_id {self.call_id}: Initializing Azure OpenAI Transcriber process for {speaker}."
             )
             # Instantiér transcribereren med den specifikke speaker
-            self.openai_transcriber_instances = getattr(
-                self, "openai_transcriber_instances", {}
-            )
+            self.openai_transcriber_instances = getattr(self, "openai_transcriber_instances", {})
             transcriber = AzureOpenAITranscriber(
                 args=self.args,
                 config=self.config,
@@ -552,9 +535,7 @@ class SimpleRecordingManager:
             with open(self.flag_file, "w") as f:
                 f.write(str(os.getpid()))
         except Exception as e:
-            logger.exception(
-                f"Call_id {self.call_id}: Fejl ved oprettelse af flag file: {e}"
-            )
+            logger.exception(f"Call_id {self.call_id}: Fejl ved oprettelse af flag file: {e}")
 
     def _remove_flag_file(self) -> None:
         """
@@ -563,9 +544,7 @@ class SimpleRecordingManager:
         if os.path.exists(self.flag_file):
             try:
                 os.remove(self.flag_file)
-                logger.info(
-                    f"Call_id {self.call_id}: Flag file '{self.flag_file}' blev fjernet."
-                )
+                logger.info(f"Call_id {self.call_id}: Flag file '{self.flag_file}' blev fjernet.")
             except Exception as e:
                 logger.exception(
                     f"Call_id {self.call_id}: Der opstod en fejl med at fjerne flag file: {e}"
@@ -591,9 +570,7 @@ class SimpleRecordingManager:
 
         # Start optagelsestråde
         caller_recorder = SpeakerRecorder(self.stop_event, self.caller_queue, self.args)
-        agent_recorder = MicrophoneRecorder(
-            self.stop_event, self.agent_queue, self.args
-        )
+        agent_recorder = MicrophoneRecorder(self.stop_event, self.agent_queue, self.args)
 
         self._start_thread(caller_recorder.start, ())
         self._start_thread(agent_recorder.start, ())
@@ -602,9 +579,7 @@ class SimpleRecordingManager:
         try:
             # Hent config fra leverance (on-prem)
             config_location_url = f"{self.config.LEVERANCE_URL}/get_config"
-            logger.info(
-                f"Call_id {self.call_id}: Fetching config from: {config_location_url}"
-            )
+            logger.info(f"Call_id {self.call_id}: Fetching config from: {config_location_url}")
             config_location = requests.get(
                 config_location_url,
                 params={
@@ -632,14 +607,10 @@ class SimpleRecordingManager:
             streamer_version = config_data.get("streamer_version", "openai").lower()
             if streamer_version == "azure":
                 self.loc = "azure"
-            self.controller_version = config_data.get(
-                "controller_version", "onprem"
-            ).lower()
+            self.controller_version = config_data.get("controller_version", "onprem").lower()
 
             # Opdatér config baseret på hentet miljø
-            self.config = get_config(
-                env=miljoe, azure=(self.controller_version == "azure")
-            )
+            self.config = get_config(env=miljoe, azure=(self.controller_version == "azure"))
 
         except requests.exceptions.RequestException as e:
             logger.warning(
@@ -664,9 +635,7 @@ class SimpleRecordingManager:
             load_dotenv(override=True)
             # Start separate OpenAI processeringstråde for agent og caller
             self._start_thread(self._process_queue_openai, (self.agent_queue, "agent"))
-            self._start_thread(
-                self._process_queue_openai, (self.caller_queue, "caller")
-            )
+            self._start_thread(self._process_queue_openai, (self.caller_queue, "caller"))
         else:
             # Brug Azure som standard
             # Start storage-tråde for Azure
@@ -695,9 +664,7 @@ class SimpleRecordingManager:
             )
             self.stop()
         except Exception as e:
-            logger.exception(
-                f"Call_id {self.call_id}: Error in main monitoring loop: {e}"
-            )
+            logger.exception(f"Call_id {self.call_id}: Error in main monitoring loop: {e}")
             # Forsøg at stoppe pænt selv ved uventede fejl
 
             self.stop()
@@ -730,9 +697,7 @@ class SimpleRecordingManager:
                     f"Call_id {self.call_id}: Thread '{thread.name}' did not finish within timeout."
                 )
             else:
-                logger.info(
-                    f"Call_id {self.call_id}: Thread '{thread.name}' joined successfully."
-                )
+                logger.info(f"Call_id {self.call_id}: Thread '{thread.name}' joined successfully.")
             # Hold styr på tråde for potentielle senere checks hvis nødvendigt
 
         # Bemærk: OpenAI-transcriberens finalize-metode kaldes internt,
@@ -765,9 +730,7 @@ class SimpleRecordingManager:
                         f"Notified Leverance at {url} for call-id '{call_id}' with uid {uid}. Status code: {response.status_code}"
                     )
                 except Exception as e:
-                    logger.error(
-                        f"Error calling leverance at {url} for call-id '{call_id}': {e}"
-                    )
+                    logger.error(f"Error calling leverance at {url} for call-id '{call_id}': {e}")
 
             # Fire-and-forget notifikationen til leverance for at undgå at blokere hovedtråden
             # Afhængigt af konfiguration kaldes /process_call i controller i web app eller controller on-prem
@@ -787,9 +750,7 @@ class SimpleRecordingManager:
             self.icon.stop()
             logger.info(f"Call_id {self.call_id}:System tray icon stopped.")
         except Exception as e:
-            logger.exception(
-                f"Call_id {self.call_id}: Error stopping system tray icon: {e}"
-            )
+            logger.exception(f"Call_id {self.call_id}: Error stopping system tray icon: {e}")
 
         logger.info(f"Call_id {self.call_id}: Recording process stopped.")
         # Overvej os._exit(0) hvis en ren afslutning er absolut nødvendig med det samme,

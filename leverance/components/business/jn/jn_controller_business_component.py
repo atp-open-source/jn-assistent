@@ -2,11 +2,11 @@ import json
 import time
 from uuid import UUID
 
-from leverance.core.runners.service_runner import ServiceRunner
-from leverance.core.logger_adapter import ServiceLoggerAdapter
 from leverance.components.business.jn.jn_storage_account_business_component import (
     JNStorageAccountBusinessComponent,
 )
+from leverance.core.logger_adapter import ServiceLoggerAdapter
+from leverance.core.runners.service_runner import ServiceRunner
 
 
 class JNControllerBusinessComponent(ServiceRunner):
@@ -20,7 +20,6 @@ class JNControllerBusinessComponent(ServiceRunner):
     """
 
     def __init__(self, request_uid: UUID, config_name=None) -> None:
-
         # Initialisér UID og servicenavn
         self.service_name = "jn"
         self.request_uid = request_uid
@@ -58,7 +57,6 @@ class JNControllerBusinessComponent(ServiceRunner):
 
         # Udtræk beskeder for både agent og caller
         for speaker in ["agent", "caller"]:
-
             blob_name = f"transcriptions-{call_id}-{speaker}.jsonl"
 
             # Download og slet blob
@@ -91,9 +89,7 @@ class JNControllerBusinessComponent(ServiceRunner):
                 # Decode blob-data
                 data = blob_data.decode("utf-8")
                 # Parse hver linje som et JSON-objekt. Tomme linjer ignoreres
-                messages.extend(
-                    [json.loads(line) for line in data.split("\n") if line.strip()]
-                )
+                messages.extend([json.loads(line) for line in data.split("\n") if line.strip()])
             except UnicodeDecodeError as e:
                 self.service_logger.service_exception(
                     self, f"Kunne ikke decode Blob-data for blob {blob_name}: {e}"
@@ -156,13 +152,11 @@ class JNControllerBusinessComponent(ServiceRunner):
 
             for message in messages:
                 if "status" in message:
-
                     # Udtræk status for opkald
                     call_status = message["status"]
 
                     # Håndtér start af opkald
                     if call_status == "start":
-
                         # Udtræk relevante værdier
                         call_id = message["call_id"]
                         agent_id = message["agent_id"]
@@ -171,7 +165,6 @@ class JNControllerBusinessComponent(ServiceRunner):
 
                 # Håndtér alle beskeder mellem start og slut
                 if "sentence" in message:
-
                     # Udtræk relevante værdier
                     sentence = message.get("sentence", None)
                     timestamp = message.get("timestamp", None)

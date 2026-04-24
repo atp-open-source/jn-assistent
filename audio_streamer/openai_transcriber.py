@@ -1,14 +1,21 @@
-import io, json, os, queue, threading, time, tempfile, requests
-from typing import Any, Dict, Union, Optional
+import io
+import json
+import os
+import queue
+import tempfile
+import threading
+import time
+from datetime import datetime as dt
+from datetime import timedelta
 from uuid import uuid4
-from datetime import datetime as dt, timedelta
-from loguru import logger
-from dotenv import load_dotenv
-from azure.identity import ClientSecretCredential, DefaultAzureCredential
+
+import requests
 from azure.core.credentials import AccessToken, TokenCredential
+from azure.identity import ClientSecretCredential, DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 from azure.storage.queue import QueueServiceClient
-from openai import AzureOpenAI, APIError
+from loguru import logger
+from openai import APIError, AzureOpenAI
 from pydub import AudioSegment
 
 from audio_streamer.config import BaseConfig
@@ -44,7 +51,7 @@ class AzureOpenAITranscriber:
 
     def __init__(
         self,
-        args: Dict[str, str],
+        args: dict[str, str],
         config: BaseConfig,
         speaker: str,
         controller_version: str = "onprem",
@@ -101,9 +108,7 @@ class AzureOpenAITranscriber:
         Initialiserer Azure OpenAI klienten.
         """
 
-        token = self.credentials.get_token(
-            "https://cognitiveservices.azure.com/.default"
-        )
+        token = self.credentials.get_token("https://cognitiveservices.azure.com/.default")
         self.expires_on = token.expires_on
         self.openai_client = AzureOpenAI(
             azure_deployment="gpt-4o-mini-transcribe",
@@ -111,11 +116,9 @@ class AzureOpenAITranscriber:
             api_version="2025-03-01-preview",
             api_key=token.token,
         )
-        logger.info(
-            f"Call_id: {self.call_id} Azure OpenAI client initialized successfully."
-        )
+        logger.info(f"Call_id: {self.call_id} Azure OpenAI client initialized successfully.")
 
-    def _get_storage_token(self) -> Optional[TokenCredentialAdapter]:
+    def _get_storage_token(self) -> TokenCredentialAdapter | None:
         """
         Henter token til Azure Storage.
         """
@@ -141,12 +144,10 @@ class AzureOpenAITranscriber:
             )
             return TokenCredentialAdapter(token, expires_on)
         except Exception as e:
-            logger.exception(
-                f"Call_id {self.call_id}: Error fetching token for Azure Storage: {e}"
-            )
+            logger.exception(f"Call_id {self.call_id}: Error fetching token for Azure Storage: {e}")
             return None
 
-    def _create_blob_service_client(self) -> Optional[BlobServiceClient]:
+    def _create_blob_service_client(self) -> BlobServiceClient | None:
         """
         Opretter en klient til Azure Blob Storage.
         """
@@ -169,17 +170,13 @@ class AzureOpenAITranscriber:
                 account_url=self.config.BLOB_ACCOUNT_URL,
                 credential=token_credential,
             )
-            logger.info(
-                f"Call_id {self.call_id}: BlobServiceClient created successfully."
-            )
+            logger.info(f"Call_id {self.call_id}: BlobServiceClient created successfully.")
             return blob_service_client
         except Exception as e:
-            logger.exception(
-                f"Call_id {self.call_id}: Error creating BlobServiceClient: {e}"
-            )
+            logger.exception(f"Call_id {self.call_id}: Error creating BlobServiceClient: {e}")
             return None
 
-    def _create_queue_service_client(self) -> Optional[QueueServiceClient]:
+    def _create_queue_service_client(self) -> QueueServiceClient | None:
         """
         Opretter en klient til Azure Queue Storage.
         """
@@ -202,14 +199,10 @@ class AzureOpenAITranscriber:
                 account_url=self.config.QUEUE_ACCOUNT_URL,
                 credential=token_credential,
             )
-            logger.info(
-                f"Call_id {self.call_id}: QueueServiceClient created successfully."
-            )
+            logger.info(f"Call_id {self.call_id}: QueueServiceClient created successfully.")
             return queue_client
         except Exception as e:
-            logger.exception(
-                f"Call_id {self.call_id}: Error creating QueueServiceClient: {e}"
-            )
+            logger.exception(f"Call_id {self.call_id}: Error creating QueueServiceClient: {e}")
             return None
 
     def _upload_to_queue(self, queue_name: str, data: str) -> bool:
@@ -219,9 +212,7 @@ class AzureOpenAITranscriber:
 
         try:
             queue_client.get_queue_client(queue_name).send_message(data)
-            logger.info(
-                f"Call_id {self.call_id}: Data uploaded to queue '{queue_name}'."
-            )
+            logger.info(f"Call_id {self.call_id}: Data uploaded to queue '{queue_name}'.")
             return True
         except Exception as e:
             logger.exception(
@@ -267,9 +258,7 @@ class AzureOpenAITranscriber:
                     f"Call_id {self.call_id}: Append blob '{blob_name}' not found, creating..."
                 )
                 append_blob_client.create_append_blob()
-                logger.info(
-                    f"Call_id {self.call_id}: Append blob '{blob_name}' created."
-                )
+                logger.info(f"Call_id {self.call_id}: Append blob '{blob_name}' created.")
 
             # Tilføj data
             data_bytes = data.encode("utf-8")
@@ -415,9 +404,7 @@ class AzureOpenAITranscriber:
             "status": "start-call",
             "timestamp": time.time(),
         }
-        self._upload_to_queue(
-            f"status-{self.agent_id.lower()}", json.dumps(data_upload)
-        )
+        self._upload_to_queue(f"status-{self.agent_id.lower()}", json.dumps(data_upload))
         logger.info(
             f"Call_id {self.call_id}: Starting OpenAI transcription processing loop for {self.speaker}."
         )
@@ -469,9 +456,7 @@ class AzureOpenAITranscriber:
             "status": "end-call",
             "timestamp": time.time(),
         }
-        self._upload_to_queue(
-            f"status-{self.agent_id.lower()}", json.dumps(data_upload)
-        )
+        self._upload_to_queue(f"status-{self.agent_id.lower()}", json.dumps(data_upload))
         logger.info(
             f"Call_id {self.call_id}: Stop event set and queue empty for {self.speaker}, finalizing transcription."
         )
@@ -482,9 +467,7 @@ class AzureOpenAITranscriber:
         Transskriberer eventuel resterende lyd og uploader den fulde transskription til Blob.
         """
 
-        logger.info(
-            f"Call_id {self.call_id}: Finalizing transcription for {self.speaker}..."
-        )
+        logger.info(f"Call_id {self.call_id}: Finalizing transcription for {self.speaker}...")
         if not self.client_ready:
             logger.error(
                 f"Call_id {self.call_id}: Cannot finalize transcription, OpenAI client not initialized."
@@ -509,9 +492,7 @@ class AzureOpenAITranscriber:
             # Formatér resultater som JSONL string
             jsonl_data = ""
             # Sortér resultater efter timestamp før oprettelse af JSONL
-            sorted_results = sorted(
-                self.transcription_results, key=lambda x: x.get("timestamp", 0)
-            )
+            sorted_results = sorted(self.transcription_results, key=lambda x: x.get("timestamp", 0))
             line_data_start = {
                 "status": "start",
                 "call_id": self.call_id,
@@ -577,6 +558,4 @@ class AzureOpenAITranscriber:
                 f"Call_id {self.call_id}: No transcription results generated for {self.speaker}, skipping upload and notification."
             )
 
-        logger.info(
-            f"Call_id {self.call_id}: Finalization complete for {self.speaker}."
-        )
+        logger.info(f"Call_id {self.call_id}: Finalization complete for {self.speaker}.")

@@ -60,9 +60,7 @@ class AudioStreamerWebserviceClient(BaseHelperClient):
             verify=False,
         )
 
-        if resp is not None:
-            return True
-        return False
+        return resp is not None
 
     def health_check(self) -> bool:
         """Kald health-check endpointet /health_check."""
@@ -77,6 +75,4 @@ class AudioStreamerWebserviceClient(BaseHelperClient):
             verify=False,
         )
 
-        if resp is not None:
-            return True
-        return False
+        return resp is not None

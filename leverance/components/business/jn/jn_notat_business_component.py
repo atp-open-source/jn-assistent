@@ -5,16 +5,15 @@ from typing import Any
 from uuid import UUID
 
 from dateutil.relativedelta import relativedelta
-
-from leverance.core.common.timeout_handler import run_with_timeout
-from leverance.core.runners.service_runner import ServiceRunner
-from leverance.core.logger_adapter import ServiceLoggerAdapter
-from spark_core.components.core_types import OutputTable
 from spark_core.components.base_component import NonSessionComponent
+from spark_core.components.core_types import OutputTable
 
 from leverance.components.business.jn.jn_storage_account_business_component import (
     JNStorageAccountBusinessComponent,
 )
+from leverance.core.common.timeout_handler import run_with_timeout
+from leverance.core.logger_adapter import ServiceLoggerAdapter
+from leverance.core.runners.service_runner import ServiceRunner
 
 
 class JNNotatBusinessComponent(NonSessionComponent, ServiceRunner):
@@ -46,15 +45,12 @@ class JNNotatBusinessComponent(NonSessionComponent, ServiceRunner):
     * hent_alle_notater:       Hent alle journalnotater inden for en given periode.
     """
 
-    def __init__(self, request_uid: UUID = None, config_name=None):
-
+    def __init__(self, request_uid: UUID | None = None, config_name=None):
         # Initialisér NonSessionComponent
         NonSessionComponent.__init__(self, app=None)
 
         # Initialisér ServiceRunner
-        ServiceRunner.__init__(
-            self, "jn", request_uid=request_uid, config_name=config_name
-        )
+        ServiceRunner.__init__(self, "jn", request_uid=request_uid, config_name=config_name)
 
         # Logger
         self.service_logger = ServiceLoggerAdapter(self.app.log)
@@ -135,6 +131,7 @@ class JNNotatBusinessComponent(NonSessionComponent, ServiceRunner):
                 "kr_initialer",
                 "forretningsomraade",
             ],
+            strict=False,
         ):
             if not val:
                 if call_id:
@@ -177,12 +174,8 @@ class JNNotatBusinessComponent(NonSessionComponent, ServiceRunner):
 
         # Håndtér manglende værdier
         call_id = f"'{call_id}'" if call_id else "NULL"
-        genererings_prompt_id = (
-            genererings_prompt_id if genererings_prompt_id else "NULL"
-        )
-        validerings_prompt_id = (
-            validerings_prompt_id if validerings_prompt_id else "NULL"
-        )
+        genererings_prompt_id = genererings_prompt_id if genererings_prompt_id else "NULL"
+        validerings_prompt_id = validerings_prompt_id if validerings_prompt_id else "NULL"
         queue = f"'{queue}'" if queue else "NULL"
         kr_initialer = f"'{kr_initialer}'" if kr_initialer else "NULL"
         forretningsomraade = f"'{forretningsomraade}'" if forretningsomraade else "NULL"
@@ -276,7 +269,9 @@ class JNNotatBusinessComponent(NonSessionComponent, ServiceRunner):
         messages = self._hent_messages_azure(kr_initialer=kr_initialer)
 
         if messages is None:
-            fejl_info_str = f"Kan ikke finde status i køen med initialerne {kr_initialer} i Azure Queue."
+            fejl_info_str = (
+                f"Kan ikke finde status i køen med initialerne {kr_initialer} i Azure Queue."
+            )
             status = self.opkald_ingen_status
             self.service_logger.service_warning(
                 self,
@@ -298,8 +293,7 @@ class JNNotatBusinessComponent(NonSessionComponent, ServiceRunner):
             # Hvis seneste besked ikke er self.opkald_afsluttet_status og er oprettet for self.sekund_threshold eller flere sekunder siden
             if (
                 opkald_status != self.opkald_afsluttet_status
-                and (datetime.now() - messages[-1][0]).total_seconds()
-                >= self.sekund_threshold
+                and (datetime.now() - messages[-1][0]).total_seconds() >= self.sekund_threshold
             ):
                 fejl_info_str = f"Fejl - status for seneste opkald hos KR {kr_initialer} har været '{opkald_status}' i mere end {self.sekund_threshold / (60*60)} time(r)."
                 status = self.opkald_status_duration_exceeded
@@ -324,9 +318,7 @@ class JNNotatBusinessComponent(NonSessionComponent, ServiceRunner):
         log_besked="Timeout ved hentning af notat fra jn.notat.",
         log_type="error",
     )
-    def hent_notat(
-        self, kr_initialer: str, call_id: str | None
-    ) -> tuple[str, str | None, int]:
+    def hent_notat(self, kr_initialer: str, call_id: str | None) -> tuple[str, str | None, int]:
         """
         Henter seneste journalnotat for kunderådgiveren. Hvis call-id er givet, hentes
         notatet tilknyttet dette frem for det nyeste.
@@ -378,9 +370,7 @@ class JNNotatBusinessComponent(NonSessionComponent, ServiceRunner):
             return result[0], result[1], 200
 
         else:
-            intet_notat_fundet = (
-                f"Intet notat fundet for kunderådgiverinitialer {kr_initialer}"
-            )
+            intet_notat_fundet = f"Intet notat fundet for kunderådgiverinitialer {kr_initialer}"
             if call_id:
                 intet_notat_fundet += f" og call-id {call_id}."
             else:
@@ -396,9 +386,7 @@ class JNNotatBusinessComponent(NonSessionComponent, ServiceRunner):
         if dagens_historik:
             dato_filter = "CONVERT(date, notat.load_time) = CONVERT(date, GETDATE())"
         else:
-            dato_filter = (
-                f"notat.load_time > DATEADD(DAY, -{self.history_depth}, GETDATE())"
-            )
+            dato_filter = f"notat.load_time > DATEADD(DAY, -{self.history_depth}, GETDATE())"
 
         if "alle_ordninger" in ordning_list:
             ordning_filter = "AND 1=1"

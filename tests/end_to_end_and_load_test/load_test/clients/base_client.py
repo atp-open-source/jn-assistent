@@ -1,7 +1,8 @@
 import logging
-from typing import Any, Iterable, Literal
-from uuid import uuid4
+from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import Any, Literal
+from uuid import uuid4
 
 from locust.clients import HttpSession as LocustHttpSession
 
@@ -126,7 +127,6 @@ class BaseHelperClient:
             catch_response=True,
             **request_kwargs,
         ) as resp:
-
             # Verificer at der er modtaget en respons
             if resp is None:
                 logging.error(f"{endpoint} returnerede ingen response")
@@ -139,14 +139,9 @@ class BaseHelperClient:
                 else resp.status_code >= 200 and resp.status_code < 400
             )
             if not accepted:
-                resp_text = (
-                    getattr(resp, "text", "<no response text>")
-                    or "<empty response text>"
-                )
+                resp_text = getattr(resp, "text", "<no response text>") or "<empty response text>"
                 resp.failure(f"Uacceptabel statuskode {resp.status_code}")
-                logging.error(
-                    f"{endpoint} fejlede med statuskode {resp.status_code}: {resp_text}"
-                )
+                logging.error(f"{endpoint} fejlede med statuskode {resp.status_code}: {resp_text}")
                 return None, resp.status_code
 
             # Parse JSON-respons
@@ -162,12 +157,8 @@ class BaseHelperClient:
                 if json_response_fields:
                     for field in json_response_fields:
                         if field not in data:
-                            logging.error(
-                                f"Felt '{field}' mangler i {endpoint} response"
-                            )
-                            resp.failure(
-                                f"Felt '{field}' mangler i {endpoint} response"
-                            )
+                            logging.error(f"Felt '{field}' mangler i {endpoint} response")
+                            resp.failure(f"Felt '{field}' mangler i {endpoint} response")
                             return None, resp.status_code
             # Rå tekst-respons
             else:

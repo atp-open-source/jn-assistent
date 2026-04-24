@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass, field
+
 from pydantic import BaseModel
 
 
@@ -39,18 +40,12 @@ class BaseConfig:
             f"{os.getenv('LEVERANCE_URL', 'https://leverance')}/sta_credentials",
         )
     )
-    BLOB_ACCOUNT_URL: str = field(
-        default_factory=lambda: os.getenv("BLOB_ACCOUNT_URL", "")
-    )
-    QUEUE_ACCOUNT_URL: str = field(
-        default_factory=lambda: os.getenv("QUEUE_ACCOUNT_URL", "")
-    )
+    BLOB_ACCOUNT_URL: str = field(default_factory=lambda: os.getenv("BLOB_ACCOUNT_URL", ""))
+    QUEUE_ACCOUNT_URL: str = field(default_factory=lambda: os.getenv("QUEUE_ACCOUNT_URL", ""))
     AZURE_OPENAI_ENDPOINT: str = field(
         default_factory=lambda: os.getenv("AZURE_OPENAI_ENDPOINT", "")
     )
-    STORAGE_ACCOUNT_NAME: str = field(
-        default_factory=lambda: os.getenv("STORAGE_ACCOUNT_NAME", "")
-    )
+    STORAGE_ACCOUNT_NAME: str = field(default_factory=lambda: os.getenv("STORAGE_ACCOUNT_NAME", ""))
 
 
 @dataclass

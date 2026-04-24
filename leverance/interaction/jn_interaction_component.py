@@ -1,8 +1,11 @@
-from flask import Response
-from flask import current_app as flask_app
-from flask import jsonify, request
 import time
 
+from flask import Response, jsonify, request
+from flask import current_app as flask_app
+
+from leverance.components.business.jn.jn_config_business_component import (
+    JNConfigBusinessComponent,
+)
 from leverance.components.business.jn.jn_controller_business_component import (
     JNControllerBusinessComponent,
 )
@@ -15,17 +18,14 @@ from leverance.components.business.jn.jn_notat_business_component import (
 from leverance.components.business.jn.jn_notat_feedback_business_component import (
     JNNotatFeedbackBusinessComponent,
 )
+from leverance.components.business.jn.jn_prompts_business_component import (
+    JNPromptsBusinessComponent,
+)
 from leverance.components.business.jn.jn_samtale_business_component import (
     JNSamtaleBusinessComponent,
 )
-from leverance.components.business.jn.jn_config_business_component import (
-    JNConfigBusinessComponent,
-)
 from leverance.components.business.jn.jn_storage_account_business_component import (
     JNStorageAccountBusinessComponent,
-)
-from leverance.components.business.jn.jn_prompts_business_component import (
-    JNPromptsBusinessComponent,
 )
 from leverance.components.interaction.webservice.blueprints.jn import bp
 
@@ -50,7 +50,7 @@ def fetch_status() -> tuple[Response | str, int]:
 
     except Exception as e:
         # Svarer med http statuskode 400, hvis anmodningen fejler
-        flask_app.logger.exception(f"Dårlig anmodning. Fejl: {str(e)}")
+        flask_app.logger.exception(f"Dårlig anmodning. Fejl: {e!s}")
         return jsonify(msg="Dårlig anmodning"), 400
 
     status = JNNotatBusinessComponent(
@@ -162,9 +162,7 @@ def process_call() -> Response | tuple[Response, int]:
 
         # Initialisér model og generér journalnotat
         start_predict = time.time()
-        model = JNModelBusinessComponent(
-            request.uid, config_name=flask_app.config["SPARK_config"]
-        )
+        model = JNModelBusinessComponent(request.uid, config_name=flask_app.config["SPARK_config"])
         (
             journalnotat,
             formatted_samtale,
@@ -243,7 +241,7 @@ def process_call() -> Response | tuple[Response, int]:
         # OBS: Evaluering benyttes ikke lige nu. Kan være det skal bruges i Fase 3.
         # Den tages stilling til i US 685196, derfor er variablen eval sat til False.
         eval = False
-        if model.har_fejlet == False and eval == True:
+        if model.har_fejlet is False and eval is True:
             start_eval = time.time()
             model.evaluate_model(call_id, results_dict, formatted_samtale)
             end_eval = time.time()
@@ -265,10 +263,8 @@ def process_call() -> Response | tuple[Response, int]:
         return jsonify(msg="Journalnotat dannet og gemt"), 200
 
     except Exception as e:
-        service_logger.service_exception(
-            controller, f"Der opstod en fejl i process_call: {str(e)}"
-        )
-        return jsonify(msg=f"Der opstod en fejl i process_call: {str(e)}"), 500
+        service_logger.service_exception(controller, f"Der opstod en fejl i process_call: {e!s}")
+        return jsonify(msg=f"Der opstod en fejl i process_call: {e!s}"), 500
 
 
 @bp.route("/feedback", methods=["POST"])
@@ -286,9 +282,7 @@ def feedback() -> tuple[Response, int]:
         rating = data.get("rating", -1)
         benyttet = data.get("benyttet")
     except Exception as e:
-        flask_app.logger.exception(
-            f"Fejl i hentning af feedback fra anmodning: {str(e)}"
-        )
+        flask_app.logger.exception(f"Fejl i hentning af feedback fra anmodning: {e!s}")
         return jsonify(msg="400 - Dårlig anmodning"), 400
 
     # Gem feedback i jn.notat_feedback
@@ -326,7 +320,7 @@ def get_config() -> tuple[Response, int]:
         return jsonify(konfiguration), 200
     except Exception as e:
         flask_app.logger.exception(
-            f"Fejl i udhentning af konfiguration for kunderådgiver {kr_initialer}: {str(e)}"
+            f"Fejl i udhentning af konfiguration for kunderådgiver {kr_initialer}: {e!s}"
         )
 
 
@@ -346,9 +340,7 @@ def insert_config() -> tuple[Response, int]:
         transcriber_version = data.get("transcriber_version")
         controller_version = data.get("controller_version")
     except Exception as e:
-        flask_app.logger.exception(
-            f"Fejl i hentning af konfiguration fra anmodning: {str(e)}"
-        )
+        flask_app.logger.exception(f"Fejl i hentning af konfiguration fra anmodning: {e!s}")
         return jsonify(msg="400 - Dårlig anmodning"), 400
 
     # Indsæt konfiguration for kunderådgiver
@@ -375,9 +367,7 @@ def delete_config() -> tuple[Response, int]:
     try:
         kr_initialer = request.args.get("kr_initialer", None)
     except Exception as e:
-        flask_app.logger.exception(
-            f"Fejl i hentning af konfiguration fra anmodning: {str(e)}"
-        )
+        flask_app.logger.exception(f"Fejl i hentning af konfiguration fra anmodning: {e!s}")
         return jsonify(msg="400 - Dårlig anmodning, kr_initialer skal gives med."), 400
 
     # Slet konfiguration for kunderådgiver
@@ -403,7 +393,7 @@ def sta_credentials() -> tuple[Response | str, int]:
         ).get_token()
         return jsonify(token), 200
     except Exception as e:
-        flask_app.logger.exception(f"Fejl ved generering af token: {str(e)}")
+        flask_app.logger.exception(f"Fejl ved generering af token: {e!s}")
         return jsonify(msg="500 - Intern serverfejl"), 500
 
 
@@ -422,7 +412,5 @@ def get_prompt() -> tuple[Response | str, int]:
         ).hent_notat_prompts(ordning)
         return jsonify(prompt), 200
     except Exception as e:
-        flask_app.logger.exception(
-            f"Fejl ved hentning af prompt(s) for ordning {ordning}: {str(e)}"
-        )
+        flask_app.logger.exception(f"Fejl ved hentning af prompt(s) for ordning {ordning}: {e!s}")
         return jsonify(msg="500 - Intern serverfejl"), 500

@@ -1,5 +1,3 @@
-import logging
-
 from clients.base_client import BaseHelperClient, UserContext
 
 
@@ -75,6 +73,4 @@ class FrontendWebserviceClient(BaseHelperClient):
             json=json_data,
         )
 
-        if resp is not None:
-            return True
-        return False
+        return resp is not None

@@ -1,8 +1,9 @@
 import time
 import unittest
 
-from leverance import data
 from spark_core.testing.base_test_executor import BaseTestExecutor
+
+from leverance import data
 
 from .jn_prompts_business_component import JNPromptsBusinessComponent
 
@@ -49,10 +50,8 @@ class TestJNPromptsBusinessComponent(unittest.TestCase):
                 - Vælger den nyeste prompt baseret på load_time når der er flere med samme sekvens_nr.
         """
 
-        with JNPromptsExecutor() as context:
-            komp = JNPromptsBusinessComponent(
-                request_uid="test_request_uid", config_name=None
-            )
+        with JNPromptsExecutor():
+            komp = JNPromptsBusinessComponent(request_uid="test_request_uid", config_name=None)
 
             # Test 1: Indsæt ældre prompt til generering af notat (sekvens_nr=1)
             komp.gem_prompt(
@@ -122,9 +121,7 @@ class TestJNPromptsBusinessComponent(unittest.TestCase):
                 notat_val_prompt,
                 "Skal vælge den nyeste valideringsprompt baseret på load_time for sekvens_nr=2",
             )
-            self.assertEqual(
-                self.prompt_data["model"], notat_val_model, "Korrekt model"
-            )
+            self.assertEqual(self.prompt_data["model"], notat_val_model, "Korrekt model")
             # Test 3: Hent standard prompts for en ordning der ikke findes
             komp.gem_prompt(
                 self.prompt_data_standard["model"],
@@ -159,17 +156,13 @@ class TestJNPromptsBusinessComponent(unittest.TestCase):
                 notat_prompt,
                 "Skal vælge den standard prompt baseret på load_time for sekvens_nr=1",
             )
-            self.assertEqual(
-                self.prompt_data_standard["model"], notat_model, "Korrekt model"
-            )
+            self.assertEqual(self.prompt_data_standard["model"], notat_model, "Korrekt model")
             self.assertEqual(
                 "Standard prompt til validering af notat",
                 notat_val_prompt,
                 "Skal vælge den standard valideringsprompt baseret på load_time for sekvens_nr=2",
             )
-            self.assertEqual(
-                self.prompt_data_standard["model"], notat_val_model, "Korrekt model"
-            )
+            self.assertEqual(self.prompt_data_standard["model"], notat_val_model, "Korrekt model")
 
             # Test 4: Test default forretningsområde (standard)
             # Indsæt prompts for 'standard' ordning med forskellige load_time
@@ -241,7 +234,7 @@ class TestJNPromptsBusinessComponent(unittest.TestCase):
         """
         Tester at metoden 'hent_eval_prompts' korrekt henter evalueringsprompts.
         """
-        with JNPromptsExecutor() as context:
+        with JNPromptsExecutor():
             komp = JNPromptsBusinessComponent(request_uid="test_request_uid")
 
             # Indsæt 4 evalueringsprompts med forskellige sekvens_nr
@@ -333,15 +326,9 @@ class TestJNPromptsBusinessComponent(unittest.TestCase):
             self.assertEqual(1, len(result), "Korrekt antal rækker")
 
             # Forventede værdier
-            self.assertEqual(
-                self.prompt_data["model"], result[0].model, "Korrekt model"
-            )
-            self.assertEqual(
-                self.prompt_data["prompt"], result[0].prompt, "Korrekt prompt"
-            )
-            self.assertEqual(
-                self.prompt_data["ordning"], result[0].ordning, "Korrekt ordning"
-            )
+            self.assertEqual(self.prompt_data["model"], result[0].model, "Korrekt model")
+            self.assertEqual(self.prompt_data["prompt"], result[0].prompt, "Korrekt prompt")
+            self.assertEqual(self.prompt_data["ordning"], result[0].ordning, "Korrekt ordning")
             self.assertEqual(
                 self.prompt_data["er_evaluering"],
                 result[0].er_evaluering,
@@ -365,7 +352,7 @@ class TestJNPromptsBusinessComponent(unittest.TestCase):
         """
         Tester at metoden 'gem_prompt' returnerer fejlkode 400 når en værdi mangler.
         """
-        with JNPromptsExecutor() as context:
+        with JNPromptsExecutor():
             komp = JNPromptsBusinessComponent(request_uid="test_request_uid")
 
             # Forsøg at indsætte en prompt med manglende værdier
@@ -425,8 +412,7 @@ class TestJNPromptsBusinessComponent(unittest.TestCase):
             # Test med maksimale længder baseret på database schema
             return_val = komp.gem_prompt(
                 "a" * 20,  # model: NVARCHAR(20)
-                "Dette er en lang prompt"
-                * 100,  # prompt: NVARCHAR(MAX) - ingen begrænsning
+                "Dette er en lang prompt" * 100,  # prompt: NVARCHAR(MAX) - ingen begrænsning
                 "a" * 50,  # ordning: NVARCHAR(50)
                 1,  # er_evaluering: TINYINT
                 "a" * 20,  # api_version: NVARCHAR(20)
@@ -458,9 +444,7 @@ class JNPromptsExecutor(BaseTestExecutor):
         super().__exit__(exc_type, exc_val, exc_tb)
 
     def delete_testdata(self):
-        self.db_dfd_leverance_forretning.delete_from_table(
-            data.leverance.business.jn.Prompts
-        )
+        self.db_dfd_leverance_forretning.delete_from_table(data.leverance.business.jn.Prompts)
 
         self.db_dfd_leverance_forretning.session.commit()
 
@@ -481,9 +465,7 @@ class JNPromptsExecutor(BaseTestExecutor):
         """
 
         results = (
-            self.db_dfd_leverance_forretning.session.query(
-                data.leverance.business.jn.Prompts
-            )
+            self.db_dfd_leverance_forretning.session.query(data.leverance.business.jn.Prompts)
             .order_by(data.leverance.business.jn.Prompts.load_time)
             .all()
         )

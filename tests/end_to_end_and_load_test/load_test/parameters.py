@@ -1,7 +1,8 @@
 import datetime as dt
 import os
-from dotenv import load_dotenv
+
 import locust.stats
+from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
@@ -59,6 +60,4 @@ locust.stats.CONSOLE_STATS_INTERVAL_SEC = locust.stats.CSV_STATS_INTERVAL_SEC
 
 # Konfiguration for hvor stort et vindue (i sekunder) der skal bruges til beregning af
 # rullende percentiler i CSV statistikkerne.
-locust.stats.CURRENT_RESPONSE_TIME_PERCENTILE_WINDOW = int(
-    os.getenv("CSV_STATS_WINDOW_SEC", "60")
-)
+locust.stats.CURRENT_RESPONSE_TIME_PERCENTILE_WINDOW = int(os.getenv("CSV_STATS_WINDOW_SEC", "60"))

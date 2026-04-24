@@ -1,11 +1,11 @@
+from queue import Queue
+from threading import Event
 from unittest import TestCase, mock
+
 from audio_streamer.streamer import (
     MicrophoneRecorder,
-    SpeakerRecorder,
     SimpleRecordingManager,
 )
-from threading import Event
-from queue import Queue
 
 
 class TestMicrophoneRecorder(TestCase):
@@ -59,8 +59,9 @@ class TestSimpleRecordingManager(TestCase):
         }
         config = mock.Mock()
         manager = SimpleRecordingManager(args, config)
-        with mock.patch("os.path.exists", return_value=True), mock.patch(
-            "os.remove"
-        ) as mocked_remove:
+        with (
+            mock.patch("os.path.exists", return_value=True),
+            mock.patch("os.remove") as mocked_remove,
+        ):
             manager._remove_flag_file()
             mocked_remove.assert_called_once()

@@ -1,10 +1,13 @@
-import json, spacy
+import gc
+import json
 import os.path
+
+import spacy
+from jiwer import wer
+
 from leverance.components.business.jn.jn_model_business_component import (
     JNModelBusinessComponent,
 )
-from jiwer import wer
-import gc
 
 # Base directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -86,21 +89,17 @@ def generer_notater(
     """
     # Generer notater for test-samtaler med den prompt-strategi, der bruges af JNModelBusinessComponent
     notater = {prompt_strategy: {}}
-    for call_id in eval_data.keys():
+    for call_id in eval_data:
         notater[prompt_strategy][call_id] = {}
         notat, _, results_dict = model.predict(eval_data[call_id]["samtale"], "call_id")
         clean_notat = remove_html_formatting(notat)
         notater[prompt_strategy][call_id]["final_notat"] = clean_notat
-        notater[prompt_strategy][call_id]["response_notat"] = results_dict[
-            "response_notat"
-        ]
-        notater[prompt_strategy][call_id]["response_val_notat"] = results_dict[
-            "response_val_notat"
-        ]
+        notater[prompt_strategy][call_id]["response_notat"] = results_dict["response_notat"]
+        notater[prompt_strategy][call_id]["response_val_notat"] = results_dict["response_val_notat"]
 
     # Hvis der findes notater genereret med tidligere prompt-strategier, så indlæs dem
     if os.path.isfile(FILE_NAME_NOTATER):
-        with open(FILE_NAME_NOTATER, "r") as json_file:
+        with open(FILE_NAME_NOTATER) as json_file:
             tidligere_notater = json.load(json_file)
         tidligere_notater[prompt_strategy] = notater[prompt_strategy]
         notater = tidligere_notater
@@ -137,9 +136,7 @@ def score_notater(
     """
 
     # Indlæs prompts til at evaluere de genererede notater
-    with open(
-        os.path.join(BASE_DIR, "prompts", "kvalitet_prompt_offline.txt"), "r"
-    ) as file:
+    with open(os.path.join(BASE_DIR, "prompts", "kvalitet_prompt_offline.txt")) as file:
         prompt_kvalitet = file.read()
 
     # Definer keys og labels for scores
@@ -153,17 +150,15 @@ def score_notater(
         ("sentence_similarity", "Sentence Similarity"),
     ]
     # Generér scores for de generede notater
-    for prompt_strategi in notater.keys():
+    for prompt_strategi in notater:
         print(f"\nEvaluerer notater lavet med {prompt_strategi} prompt strategien.\n")
-        for call_id in eval_data.keys():
+        for call_id in eval_data:
             # Hvis der ikke findes et genereret notat på test-samtalen, så skip til næste test-samtale
-            if call_id not in notater[prompt_strategi].keys():
+            if call_id not in notater[prompt_strategi]:
                 continue
 
             # Retningslinjer, hallucination og samtale_kvalitet
-            formatted_samtale = model.text_processor.preprocess(
-                eval_data[call_id]["samtale"]
-            )
+            formatted_samtale = model.text_processor.preprocess(eval_data[call_id]["samtale"])
             results_dict = model.evaluate_model(
                 call_id,
                 notater[prompt_strategi][call_id],
@@ -203,9 +198,7 @@ def score_notater(
             gc.collect()
 
         for key, label in keys_and_labels:
-            scores = [
-                float(entry[key]) for entry in eval_data.values() if key in entry.keys()
-            ]
+            scores = [float(entry[key]) for entry in eval_data.values() if key in entry]
             min_max_mean = get_min_max_mean(scores)
             print(f"Resultater for {label} \n{'='*25}")
             print(f"{key}:", min_max_mean, scores)
@@ -217,7 +210,7 @@ def main() -> None:
     model = JNModelBusinessComponent(request_uid=request_uid)
 
     # Load test-samtaler + guld-notater
-    with open(FILE_NAME_TEST_DATA, "r", encoding="utf-8") as json_file:
+    with open(FILE_NAME_TEST_DATA, encoding="utf-8") as json_file:
         eval_data = json.load(json_file)
 
     print("Genererer notater")

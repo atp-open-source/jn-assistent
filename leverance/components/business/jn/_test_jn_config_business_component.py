@@ -1,7 +1,8 @@
 import unittest
 
-from leverance import data
 from spark_core.testing.base_test_executor import BaseTestExecutor
+
+from leverance import data
 
 from .jn_config_business_component import JNConfigBusinessComponent
 
@@ -48,14 +49,11 @@ class TestJNConfigBusinessComponent(unittest.TestCase):
         """
 
         with JNConfigExecutor() as context:
-
             # Indsæt testdata
             context.insert_testdata(self.konfigurationer[0])
 
             # Initialiser komponenten og hent konfiguration
-            komp = JNConfigBusinessComponent(
-                request_uid=self.test_uuid, config_name=None
-            )
+            komp = JNConfigBusinessComponent(request_uid=self.test_uuid, config_name=None)
             result = komp.hent_kr_konfiguration(self.konfigurationer[0]["kr_initialer"])
             non_result = komp.hent_kr_konfiguration("ABCD")
 
@@ -65,12 +63,10 @@ class TestJNConfigBusinessComponent(unittest.TestCase):
                 len(result.keys()),
                 "Korrekt antal rækker",
             )
-            self.assertEqual(
-                komp.placeholder_config, non_result, "Korrekt placeholderværdi"
-            )
+            self.assertEqual(komp.placeholder_config, non_result, "Korrekt placeholderværdi")
 
             # Forventet konfiguration
-            for key in self.konfigurationer[0].keys():
+            for key in self.konfigurationer[0]:
                 self.assertEqual(
                     self.konfigurationer[0][key],
                     result[key],
@@ -85,7 +81,7 @@ class TestJNConfigBusinessComponent(unittest.TestCase):
         tjekkes at denne bliver opdateret.
         """
 
-        with JNConfigExecutor() as context:
+        with JNConfigExecutor():
             komp = JNConfigBusinessComponent(request_uid=self.test_uuid)
             expected_results = [200, 200]
             check_inserted_data = [True, True]
@@ -101,18 +97,12 @@ class TestJNConfigBusinessComponent(unittest.TestCase):
                     controller_version=konfiguration["controller_version"],
                     forretningsomraade=konfiguration["forretningsomraade"],
                 )
-                self.assertEqual(
-                    expected_results[i], status, "Korrekt status for indsættelse"
-                )
+                self.assertEqual(expected_results[i], status, "Korrekt status for indsættelse")
 
                 # Tjek om data blev korrekt indsat
                 if check_inserted_data[i]:
-                    result = komp.hent_kr_konfiguration(
-                        self.konfigurationer[i]["kr_initialer"]
-                    )
-                    self.assertEqual(
-                        konfiguration, result, "Korrekt indsat konfiguration"
-                    )
+                    result = komp.hent_kr_konfiguration(self.konfigurationer[i]["kr_initialer"])
+                    self.assertEqual(konfiguration, result, "Korrekt indsat konfiguration")
 
     def test_slet_kr_konfiguration(self):
         """
@@ -122,7 +112,7 @@ class TestJNConfigBusinessComponent(unittest.TestCase):
         at den korrekte returværdi returneres.
         Til sidst testes sletning af en ikke-eksisterende konfiguration.
         """
-        with JNConfigExecutor() as context:
+        with JNConfigExecutor():
             komp = JNConfigBusinessComponent(request_uid=self.test_uuid)
 
             # Indsæt konfiguration
@@ -142,9 +132,7 @@ class TestJNConfigBusinessComponent(unittest.TestCase):
             self.assertEqual(test_config, result, "Konfiguration blev indsat korrekt")
 
             # Slet konfiguration og tjek returværdi
-            status_code, message = komp.slet_kr_konfiguration(
-                test_config["kr_initialer"]
-            )
+            status_code, message = komp.slet_kr_konfiguration(test_config["kr_initialer"])
             self.assertEqual(0, status_code, "Korrekt statuskode")
             self.assertIn(
                 f"Konfiguration for {test_config['kr_initialer']} blev slettet",
@@ -153,9 +141,7 @@ class TestJNConfigBusinessComponent(unittest.TestCase):
             )
 
             # Bekræft at konfigurationen er slettet
-            result_after_delete = komp.hent_kr_konfiguration(
-                test_config["kr_initialer"]
-            )
+            result_after_delete = komp.hent_kr_konfiguration(test_config["kr_initialer"])
             self.assertEqual(
                 komp.placeholder_config,
                 result_after_delete,
@@ -189,12 +175,8 @@ class JNConfigExecutor(BaseTestExecutor):
         super().__exit__(exc_type, exc_val, exc_tb)
 
     def delete_testdata(self):
-        self.db_dfd_spark_kilde.delete_from_table(
-            data.kilder.dfd_spark_kilde.map.Borger
-        )
-        self.db_dfd_leverance_forretning.delete_from_table(
-            data.leverance.business.jn.Config
-        )
+        self.db_dfd_spark_kilde.delete_from_table(data.kilder.dfd_spark_kilde.map.Borger)
+        self.db_dfd_leverance_forretning.delete_from_table(data.leverance.business.jn.Config)
 
         self.db_dfd_leverance_forretning.session.commit()
         self.db_dfd_spark_kilde.session.commit()

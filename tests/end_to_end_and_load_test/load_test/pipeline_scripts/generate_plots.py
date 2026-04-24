@@ -1,9 +1,8 @@
 import argparse
-from json.tool import main
 from pathlib import Path
 
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
 
 
 def generate_plots(stats_history_path: Path, active_calls_path: Path, output_dir: Path):
@@ -22,9 +21,7 @@ def generate_plots(stats_history_path: Path, active_calls_path: Path, output_dir
     active_calls_df = pd.read_csv(active_calls_path)
     stats_df["Timestamp"] = pd.to_datetime(stats_df["Timestamp"])
     active_calls_df["timestamp"] = pd.to_datetime(active_calls_df["timestamp"])
-    start_timestamp = min(
-        stats_df["Timestamp"].min(), active_calls_df["timestamp"].min()
-    )
+    start_timestamp = min(stats_df["Timestamp"].min(), active_calls_df["timestamp"].min())
     stats_df["Timestamp"] = stats_df["Timestamp"] - start_timestamp
     active_calls_df["timestamp"] = active_calls_df["timestamp"] - start_timestamp
 
@@ -47,12 +44,8 @@ def generate_plots(stats_history_path: Path, active_calls_path: Path, output_dir
 
         # Plot kald og fejl pr. sekund
         ax[1].grid()
-        ax[1].plot(
-            df_name["Timestamp"], df_name["Requests/s"], label="Kald/s", color="orange"
-        )
-        ax[1].plot(
-            df_name["Timestamp"], df_name["Failures/s"], label="Fejl/s", color="red"
-        )
+        ax[1].plot(df_name["Timestamp"], df_name["Requests/s"], label="Kald/s", color="orange")
+        ax[1].plot(df_name["Timestamp"], df_name["Failures/s"], label="Fejl/s", color="red")
         ax[1].set_xlabel("Tid (s)")
         ax[1].set_ylabel("Kald/s")
         ax[1].legend()
@@ -60,9 +53,7 @@ def generate_plots(stats_history_path: Path, active_calls_path: Path, output_dir
 
         # Plot brugere og aktive kald
         ax[2].grid()
-        ax[2].plot(
-            df_name["Timestamp"], df_name["User Count"], label="Brugere", color="green"
-        )
+        ax[2].plot(df_name["Timestamp"], df_name["User Count"], label="Brugere", color="green")
         ax[2].plot(
             active_calls_df["timestamp"],
             active_calls_df["active_calls"],
@@ -79,8 +70,7 @@ def generate_plots(stats_history_path: Path, active_calls_path: Path, output_dir
 
         # Gem plots
         output_path = (
-            output_dir
-            / f"{name.replace('/', '_').replace(':', '_').replace(' ', '_')}_plots.png"
+            output_dir / f"{name.replace('/', '_').replace(':', '_').replace(' ', '_')}_plots.png"
         )
         fig.savefig(output_path)
 

@@ -1,11 +1,11 @@
-import time
 import json
 import logging
-from uuid import uuid4
+import time
 from email.utils import formatdate
+from uuid import uuid4
 
-from clients.base_client import BaseHelperClient, UserContext
 from clients.audio_streamer_webservice_client import AudioStreamerWebserviceClient
+from clients.base_client import BaseHelperClient, UserContext
 
 
 class AzureStorageAccountClient(BaseHelperClient):
@@ -61,9 +61,7 @@ class AzureStorageAccountClient(BaseHelperClient):
             data=xml_body,
             headers=headers,
         )
-        if resp is None:
-            return False
-        return True
+        return resp is not None
 
     def send_status_to_queue(
         self,
@@ -108,9 +106,7 @@ class AzureStorageAccountClient(BaseHelperClient):
             accepted_status_codes=[200],
         )
 
-        if resp is None:
-            return False
-        return True
+        return resp is not None
 
     def _ensure_append_blob(self, container: str, blob: str, headers: dict) -> bool:
         """Tjek om en append blob findes. Hvis ikke, opret den."""
@@ -151,9 +147,7 @@ class AzureStorageAccountClient(BaseHelperClient):
 
         return True
 
-    def _append_block(
-        self, container: str, blob: str, data_bytes: bytes, headers: dict
-    ) -> bool:
+    def _append_block(self, container: str, blob: str, data_bytes: bytes, headers: dict) -> bool:
         """Append en blok til en Azure Append Blob via REST API."""
 
         base = self.config.BLOB_ACCOUNT_URL.rstrip("/")
@@ -169,9 +163,7 @@ class AzureStorageAccountClient(BaseHelperClient):
             data=data_bytes,
             accepted_status_codes=[201, 202],
         )
-        if resp is None:
-            return False
-        return True
+        return resp is not None
 
     def upload_to_blob(
         self,

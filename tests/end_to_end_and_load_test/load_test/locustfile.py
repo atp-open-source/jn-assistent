@@ -1,8 +1,8 @@
-from audio_streamer.config import get_config
-
 from base_jn_user import BaseJNHttpUser
-from parameters import ENV, CONTROLLER_VERSION
+from parameters import CONTROLLER_VERSION, ENV
 from utils import disable_insecure_request_warnings, register_listeners
+
+from audio_streamer.config import get_config
 
 disable_insecure_request_warnings()
 register_listeners()

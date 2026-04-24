@@ -1,10 +1,9 @@
 import argparse
 import asyncio
-import os
 
+from azure.core.exceptions import ResourceExistsError
 from azure.identity.aio import DefaultAzureCredential
 from azure.storage.blob.aio import BlobServiceClient
-from azure.core.exceptions import ResourceExistsError
 from loguru import logger
 
 from audio_streamer.config import get_config
@@ -21,9 +20,7 @@ def get_blob_service_client(
     if not account_name:
         logger.error("FEJL: account_name er ikke sat.")
         raise ValueError("account_name er ikke sat")
-    return BlobServiceClient(
-        f"https://{account_name}.blob.core.windows.net", credential=credential
-    )
+    return BlobServiceClient(f"https://{account_name}.blob.core.windows.net", credential=credential)
 
 
 async def delete_blobs_in_container(
@@ -75,9 +72,7 @@ async def _async_main(env: str, container: str, prefix: str) -> int:
 
     try:
         async with DefaultAzureCredential() as credential:
-            blob_service_client = get_blob_service_client(
-                config.STORAGE_ACCOUNT_NAME, credential
-            )
+            blob_service_client = get_blob_service_client(config.STORAGE_ACCOUNT_NAME, credential)
             try:
                 await delete_blobs_in_container(blob_service_client, container, prefix)
             finally:

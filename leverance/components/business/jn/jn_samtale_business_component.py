@@ -1,11 +1,13 @@
-from uuid import UUID
-from spark_core.components.core_types import OutputTable
-from spark_core.components.base_component import NonSessionComponent
-from leverance.components.functions.speaker_mapping_function import speaker_mapping
-from leverance.core.runners.service_runner import ServiceRunner
-from leverance.core.logger_adapter import ServiceLoggerAdapter
 import datetime as dt
+from uuid import UUID
+
 from dateutil.relativedelta import relativedelta
+from spark_core.components.base_component import NonSessionComponent
+from spark_core.components.core_types import OutputTable
+
+from leverance.components.functions.speaker_mapping_function import speaker_mapping
+from leverance.core.logger_adapter import ServiceLoggerAdapter
+from leverance.core.runners.service_runner import ServiceRunner
 
 
 class JNSamtaleBusinessComponent(NonSessionComponent, ServiceRunner):
@@ -33,13 +35,10 @@ class JNSamtaleBusinessComponent(NonSessionComponent, ServiceRunner):
     * gem_samtale:             Gem transskriberet samtale.
     """
 
-    def __init__(self, request_uid: UUID = None, config_name=None):
-
+    def __init__(self, request_uid: UUID | None = None, config_name=None):
         NonSessionComponent.__init__(self, app=None)
 
-        ServiceRunner.__init__(
-            self, "jn", request_uid=request_uid, config_name=config_name
-        )
+        ServiceRunner.__init__(self, "jn", request_uid=request_uid, config_name=config_name)
 
         self.service_logger = ServiceLoggerAdapter(self.app.log)
 
@@ -139,9 +138,7 @@ class JNSamtaleBusinessComponent(NonSessionComponent, ServiceRunner):
 
         except Exception as e:
             self.session.rollback()
-            self._log_warning(
-                f"Fejl ved gemning af samtale med call-id '{call_id}': {e}"
-            )
+            self._log_warning(f"Fejl ved gemning af samtale med call-id '{call_id}': {e}")
             return 500
 
         return 200
@@ -155,9 +152,7 @@ class JNSamtaleBusinessComponent(NonSessionComponent, ServiceRunner):
         for key, value in params.items():
             if not value:
                 if call_id:
-                    message = (
-                        f"Manglende værdi for {key} i samtale med call-id {call_id}!"
-                    )
+                    message = f"Manglende værdi for {key} i samtale med call-id {call_id}!"
                 else:
                     message = f"Manglende værdi for {key}!"
                 self._log_warning(message)

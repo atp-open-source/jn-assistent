@@ -1,8 +1,9 @@
+import csv
 import logging
 import time
-import csv
 from pathlib import Path
 
+import gevent
 from locust import events
 from locust.env import Environment
 from locust.runners import (
@@ -11,11 +12,9 @@ from locust.runners import (
     STATE_SPAWNING,
     STATE_STOPPED,
     STATE_STOPPING,
-    MasterRunner,
     LocalRunner,
+    MasterRunner,
 )
-import gevent
-
 from parameters import ACTIVE_CALLS_OUTPUT_PATH
 
 
@@ -36,7 +35,7 @@ def register_listeners():
         Opsætter monitorering af fejlrate og slår verbose logging fra for Azure SDK.
         """
         # Monitorer fejlraten og stop testen hvis den bliver for høj
-        if isinstance(environment.runner, (MasterRunner, LocalRunner)):
+        if isinstance(environment.runner, MasterRunner | LocalRunner):
             gevent.spawn(
                 monitor_failure_rate,
                 env=environment,
@@ -60,7 +59,7 @@ def register_listeners():
         Starter monitorering af antal aktive opkald.
         """
         # Monitorer aktive opkald og gem historikken
-        if isinstance(environment.runner, (MasterRunner, LocalRunner)):
+        if isinstance(environment.runner, MasterRunner | LocalRunner):
             gevent.spawn(monitor_active_calls, env=environment, check_interval=5.0)
 
     @events.test_stop.add_listener
@@ -70,7 +69,7 @@ def register_listeners():
         Gemmer historikken over aktive opkald til en CSV-fil.
         """
         # Gem aktive opkaldsdata når testen stopper
-        if isinstance(environment.runner, (MasterRunner, LocalRunner)):
+        if isinstance(environment.runner, MasterRunner | LocalRunner):
             save_active_calls_history(
                 env=environment,
                 output_file=Path(ACTIVE_CALLS_OUTPUT_PATH),
@@ -99,7 +98,7 @@ def monitor_failure_rate(
     Skal startes som en greenlet før testen starter.
     """
 
-    while not env.runner.state in [STATE_STOPPING, STATE_STOPPED, STATE_CLEANUP]:
+    while env.runner.state not in [STATE_STOPPING, STATE_STOPPED, STATE_CLEANUP]:
         gevent.sleep(check_interval)
         stats = env.stats.total
         num_requests = stats.num_requests

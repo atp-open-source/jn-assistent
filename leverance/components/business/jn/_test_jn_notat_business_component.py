@@ -1,20 +1,19 @@
+import importlib
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from time import sleep
 from unittest import mock
-import importlib
 
 import numpy as np
 from dateutil.relativedelta import relativedelta
 from freezegun import freeze_time
-
-from leverance import data
-from leverance.core.common import timeout_handler
 from spark_core.testing.base_test_executor import BaseTestExecutor
 
+from leverance import data
 from leverance.components.business.jn.jn_notat_business_component import (
     JNNotatBusinessComponent,
 )
+from leverance.core.common import timeout_handler
 
 
 class TestJNNotatBusinessComponent(unittest.TestCase):
@@ -119,9 +118,7 @@ class TestJNNotatBusinessComponent(unittest.TestCase):
             self.assertEqual(200, return_val, "korrekt return_val, 200")
 
             # Det verificeres at tabellen indeholder forventet data
-            self.assertEqual(
-                self.data["call_id"], result["call_id"][0], "Korrekt call-id"
-            )
+            self.assertEqual(self.data["call_id"], result["call_id"][0], "Korrekt call-id")
             self.assertEqual(
                 self.data["genererings_prompt_id"],
                 result["genererings_prompt_id"][0],
@@ -211,9 +208,7 @@ class TestJNNotatBusinessComponent(unittest.TestCase):
                     result["validerings_prompt_id"][i],
                     "Korrekt validerings_prompt_id",
                 )
-                self.assertEqual(
-                    [None, self.data["queue"]][i], result["queue"][i], "Korrekt queue"
-                )
+                self.assertEqual([None, self.data["queue"]][i], result["queue"][i], "Korrekt queue")
                 self.assertEqual(
                     [self.data["kr_initialer"], None][i],
                     result["kr_initialer"][i],
@@ -224,9 +219,7 @@ class TestJNNotatBusinessComponent(unittest.TestCase):
                     result["forretningsomraade"][i],
                     "Korrekt forretningsomraade",
                 )
-                self.assertEqual(
-                    [self.data["notat"], None][i], result["notat"][i], "Korrekt notat"
-                )
+                self.assertEqual([self.data["notat"], None][i], result["notat"][i], "Korrekt notat")
 
     def _get_utc_time(self, insert_minutes_ago: float = 0) -> datetime:
         """
@@ -238,12 +231,7 @@ class TestJNNotatBusinessComponent(unittest.TestCase):
         """
         return datetime.fromtimestamp(
             int(
-                (
-                    (
-                        self.today.astimezone(timezone.utc)
-                        - relativedelta(minutes=insert_minutes_ago)
-                    ).timestamp()
-                )
+                (self.today.astimezone(UTC) - relativedelta(minutes=insert_minutes_ago)).timestamp()
             )
         )
 
@@ -300,9 +288,7 @@ class TestJNNotatBusinessComponent(unittest.TestCase):
                 )
 
                 # Tjek at det er seneste status der er hentet
-                self.assertEqual(
-                    self.azure_data["values"][-1]["status"], status, "Korrekt status"
-                )
+                self.assertEqual(self.azure_data["values"][-1]["status"], status, "Korrekt status")
 
                 # Tjek fejlbesked for kø som ikke findes
                 self.assertEqual(
@@ -372,9 +358,7 @@ class TestJNNotatBusinessComponent(unittest.TestCase):
                 )
 
             # Tjek at korrekt status blev returneret for andet opkald
-            self.assertEqual(
-                self.azure_data["values"][0]["status"], status_2, "Korrekt status."
-            )
+            self.assertEqual(self.azure_data["values"][0]["status"], status_2, "Korrekt status.")
 
     def test_hent_notat(self):
         """
@@ -489,7 +473,7 @@ class TestJNNotatBusinessComponent(unittest.TestCase):
                 )
 
                 # Tjek at de korrekte statuskoder bliver returneret
-                self.assertEqual(204, status, f"Korrekt statuskode ")
+                self.assertEqual(204, status, "Korrekt statuskode ")
 
     def test_hent_notat_fejl(self):
         """
@@ -538,12 +522,9 @@ class TestJNNotatBusinessComponent(unittest.TestCase):
         with mock.patch.object(
             timeout_handler, "run_with_timeout", autospec=True
         ) as patched_timeout:
-
             # Mock run_with_timeout til at bruge en meget kort timeout-værdi
-            patched_timeout.side_effect = (
-                lambda timeout, *args, **kwargs: real_run_with_timeout(
-                    timeout=0.1, *args, **kwargs
-                )
+            patched_timeout.side_effect = lambda timeout, *args, **kwargs: real_run_with_timeout(
+                *args, timeout=0.1, **kwargs
             )
 
             # Reload jn_notat_business_component modulet for at bruge den mockede
@@ -652,25 +633,19 @@ class TestJNNotatBusinessComponent(unittest.TestCase):
                     result["validerings_prompt_id"][i],
                     f"Korrekt validerings_prompt_id {i+1}",
                 )
-                self.assertEqual(
-                    self.data["queue"], result["queue"][i], f"Korrekt queue {i+1}"
-                )
+                self.assertEqual(self.data["queue"], result["queue"][i], f"Korrekt queue {i+1}")
                 self.assertEqual(
                     self.data["kr_initialer"],
                     result["kr_initialer"][i],
                     f"Korrekt kr_initialer {i+1}",
                 )
-                self.assertEqual(
-                    call_ids[i], result["call_id"][i], f"Korrekt call-id {i+1}"
-                )
+                self.assertEqual(call_ids[i], result["call_id"][i], f"Korrekt call-id {i+1}")
                 self.assertEqual(
                     self.data["forretningsomraade"],
                     result["forretningsomraade"][i],
                     f"Korrekt forretningsomraade {i+1}",
                 )
-                self.assertEqual(
-                    forventede_notater[i], result["notat"][i], f"Korrekt notat {i+1}"
-                )
+                self.assertEqual(forventede_notater[i], result["notat"][i], f"Korrekt notat {i+1}")
 
     def test_hent_alle_notater(self):
         """
@@ -738,9 +713,7 @@ class TestJNNotatBusinessComponent(unittest.TestCase):
             )
 
         # Hent notater fra forretningsområdet 'pension' indenfor den angivne tidsperiode dagens_historik=True
-        result = component.hent_alle_notater(
-            dagens_historik=True, ordning_list=["pension"]
-        )
+        result = component.hent_alle_notater(dagens_historik=True, ordning_list=["pension"])
 
         # Verificér resultater
         self.assertEqual(len(result), 1)
@@ -754,9 +727,7 @@ class TestJNNotatBusinessComponent(unittest.TestCase):
 
         # Hent notater fra alle forretningsområder indenfor den angivne tidsperiode dagens_historik=False,
         # hvilket vil sige komponentens standardhistorik (2 måneder)
-        result = component.hent_alle_notater(
-            dagens_historik=False, ordning_list=["alle_ordninger"]
-        )
+        result = component.hent_alle_notater(dagens_historik=False, ordning_list=["alle_ordninger"])
 
         # Verificér resultater
         self.assertEqual(len(result), 3)
@@ -789,9 +760,7 @@ class JNNotatExecutor(BaseTestExecutor):
         super().__exit__(exc_type, exc_val, exc_tb)
 
     def delete_testdata(self):
-        self.db_dfd_leverance_forretning.delete_from_table(
-            data.leverance.business.jn.t_notat
-        )
+        self.db_dfd_leverance_forretning.delete_from_table(data.leverance.business.jn.t_notat)
         self.db_dfd_leverance_forretning.session.commit()
         self.db_dfd_spark_bestand.session.commit()
 

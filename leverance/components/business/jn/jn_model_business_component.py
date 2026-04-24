@@ -1,32 +1,30 @@
+import concurrent.futures
 import json
 import os
 import time
-import concurrent.futures
-from uuid import UUID
 from typing import Any
+from uuid import UUID
+
 from flask import current_app as flask_app
-
-
-from aiservice.openai_assistant import OpenAIAssistant
-from leverance.core.common.azure_helper import (
-    get_auth_based_on_env,
-    get_openai_config_based_on_env,
-)
 from openai import AzureOpenAI
 
-from leverance.components.business.jn.jn_text_processor_business_component import (
-    JNTextProcessorBusinessComponent,
-)
+from aiservice.openai_assistant import OpenAIAssistant
 from leverance.components.business.jn.jn_config_business_component import (
     JNConfigBusinessComponent,
 )
 from leverance.components.business.jn.jn_prompts_business_component import (
     JNPromptsBusinessComponent,
 )
-
+from leverance.components.business.jn.jn_text_processor_business_component import (
+    JNTextProcessorBusinessComponent,
+)
 from leverance.components.functions.llm_helper import parse_llm_json_response
-from leverance.core.runners.service_runner import ServiceRunner
+from leverance.core.common.azure_helper import (
+    get_auth_based_on_env,
+    get_openai_config_based_on_env,
+)
 from leverance.core.logger_adapter import ServiceLoggerAdapter
+from leverance.core.runners.service_runner import ServiceRunner
 
 
 class JNModelBusinessComponent(ServiceRunner):
@@ -36,7 +34,6 @@ class JNModelBusinessComponent(ServiceRunner):
     """
 
     def __init__(self, request_uid: UUID, config_name=None) -> None:
-
         # Initialisér UID og servicenavn
         self.service_name = "jn"
         self.request_uid = request_uid
@@ -69,9 +66,7 @@ class JNModelBusinessComponent(ServiceRunner):
         self.llm = self._initialize_model()
 
         # Initialisér text-processor
-        self.text_processor = JNTextProcessorBusinessComponent(
-            self.request_uid, config_name
-        )
+        self.text_processor = JNTextProcessorBusinessComponent(self.request_uid, config_name)
 
     def _initialize_model(self) -> AzureOpenAI:
         """
@@ -110,9 +105,7 @@ class JNModelBusinessComponent(ServiceRunner):
             )
             return llm
         except Exception as e:
-            self.service_logger.service_warning(
-                self, f"Fejl i initialisering af model: {e}"
-            )
+            self.service_logger.service_warning(self, f"Fejl i initialisering af model: {e}")
             raise
 
     def _prompt_llm(
@@ -151,7 +144,6 @@ class JNModelBusinessComponent(ServiceRunner):
         generation_timer_start = time.time()
 
         for i in range(self.max_retries):
-
             # Opdatér time spent
             current_time_spent = time.time() - generation_timer_start
 
@@ -193,7 +185,7 @@ class JNModelBusinessComponent(ServiceRunner):
             except Exception as e:
                 self.service_logger.service_warning(
                     self,
-                    f"Der opstod en fejl ved kald af LLM efter {i + 1} antal forsøg for call-id: {call_id}. Exception: {str(e)}",
+                    f"Der opstod en fejl ved kald af LLM efter {i + 1} antal forsøg for call-id: {call_id}. Exception: {e!s}",
                 )
                 time.sleep(0.5)
 
@@ -232,7 +224,7 @@ class JNModelBusinessComponent(ServiceRunner):
                 request_uid=self.request_uid,
                 config_name=flask_app.config["SPARK_CONFIG"].NAME,
             ).hent_kr_konfiguration(agent_id)
-        except Exception as e:
+        except Exception:
             self.service_logger.service_warning(
                 self,
                 f"Kunne ikke hente konfiguration for kunderådgiver {agent_id}, bruger standardværdier.",
@@ -266,10 +258,8 @@ class JNModelBusinessComponent(ServiceRunner):
             ) = JNPromptsBusinessComponent(
                 request_uid=self.request_uid,
                 config_name=flask_app.config["SPARK_CONFIG"].NAME,
-            ).hent_notat_prompts(
-                forretningsomraade
-            )
-        except Exception as e:
+            ).hent_notat_prompts(forretningsomraade)
+        except Exception:
             self.service_logger.service_warning(
                 self,
                 f"Kunne ikke hente prompts for kunderådgiver {agent_id} i forretningsområde {forretningsomraade} for call-id {call_id}.",
@@ -325,9 +315,7 @@ class JNModelBusinessComponent(ServiceRunner):
             except Exception:
                 samtale_tokens = 0
             # Indsæt antal tokens i prompten
-            notat_prompt_fmt = notat_prompt.replace(
-                "[[samtale_tokens]]", str(samtale_tokens)
-            )
+            notat_prompt_fmt = notat_prompt.replace("[[samtale_tokens]]", str(samtale_tokens))
         else:
             notat_prompt_fmt = notat_prompt
 
@@ -347,7 +335,7 @@ class JNModelBusinessComponent(ServiceRunner):
             call_id,
             notat_model,
         )
-        if self.har_fejlet == True:
+        if self.har_fejlet is True:
             return (
                 results_dict["response_notat"],
                 "",
@@ -385,9 +373,7 @@ class JNModelBusinessComponent(ServiceRunner):
             "tokens_used_val_notat": results_dict["tokens_used_val_notat"],
             "generation_time_val_notat": results_dict["generation_time_val_notat"],
         }
-        self.service_logger.service_info(
-            self, json.dumps(log_data_tokens, ensure_ascii=False)
-        )
+        self.service_logger.service_info(self, json.dumps(log_data_tokens, ensure_ascii=False))
 
         # Log notat og validerings notat seperat da vi ikke må gemme dem i mere end 2 måneder
         log_data_notat = {
@@ -396,11 +382,9 @@ class JNModelBusinessComponent(ServiceRunner):
             "response_val_notat": results_dict["response_val_notat"],
         }
 
-        self.service_logger.service_info(
-            self, json.dumps(log_data_notat, ensure_ascii=False)
-        )
+        self.service_logger.service_info(self, json.dumps(log_data_notat, ensure_ascii=False))
 
-        if self.har_fejlet == True:
+        if self.har_fejlet is True:
             return (
                 results_dict["response_val_notat"],
                 "",
@@ -554,9 +538,7 @@ class JNModelBusinessComponent(ServiceRunner):
 
         # Forsøg at parse JSON-svar
         try:
-            results_dict["response_hallucination"] = parse_llm_json_response(
-                response_hallucination
-            )
+            results_dict["response_hallucination"] = parse_llm_json_response(response_hallucination)
         except Exception as e:
             self.service_logger.service_warning(
                 self,
@@ -589,8 +571,6 @@ class JNModelBusinessComponent(ServiceRunner):
 
         # Log evaluering plus diagnostics for det genererede journalnotat
         results_dict["call_id"] = call_id
-        self.service_logger.service_info(
-            self, json.dumps(results_dict, ensure_ascii=False)
-        )
+        self.service_logger.service_info(self, json.dumps(results_dict, ensure_ascii=False))
 
         return results_dict

@@ -1,10 +1,11 @@
 import datetime as dt
 from uuid import UUID
 
-from leverance.core.runners.service_runner import ServiceRunner
-from leverance.core.logger_adapter import ServiceLoggerAdapter
-from spark_core.components.core_types import OutputTable
 from spark_core.components.base_component import NonSessionComponent
+from spark_core.components.core_types import OutputTable
+
+from leverance.core.logger_adapter import ServiceLoggerAdapter
+from leverance.core.runners.service_runner import ServiceRunner
 
 
 class JNPromptsBusinessComponent(NonSessionComponent, ServiceRunner):
@@ -33,15 +34,12 @@ class JNPromptsBusinessComponent(NonSessionComponent, ServiceRunner):
 
     """
 
-    def __init__(self, request_uid: UUID = None, config_name=None):
-
+    def __init__(self, request_uid: UUID | None = None, config_name=None):
         # Initialisér NonSessionComponent
         NonSessionComponent.__init__(self, app=None)
 
         # Initialisér ServiceRunner
-        ServiceRunner.__init__(
-            self, "jn", request_uid=request_uid, config_name=config_name
-        )
+        ServiceRunner.__init__(self, "jn", request_uid=request_uid, config_name=config_name)
 
         # Opsæt logger
         self.service_logger = ServiceLoggerAdapter(self.app.log)
@@ -95,7 +93,7 @@ class JNPromptsBusinessComponent(NonSessionComponent, ServiceRunner):
                         PARTITION BY sekvens_nr, ordning
                         ORDER BY load_time DESC
                     ) AS rn,
-                    CASE 
+                    CASE
                         WHEN LOWER(ordning) = '{forretningsomraade.lower()}' THEN 1
                         WHEN LOWER(ordning) = 'standard' THEN 2
                         ELSE 3
@@ -112,7 +110,7 @@ class JNPromptsBusinessComponent(NonSessionComponent, ServiceRunner):
                 ordning,
                 er_evaluering,
                 api_version,
-                sekvens_nr  
+                sekvens_nr
             FROM ranked
             WHERE rn = 1
             ORDER BY priority ASC;
@@ -286,22 +284,22 @@ class JNPromptsBusinessComponent(NonSessionComponent, ServiceRunner):
         if not retningslinjer_notat_prompt:
             self.service_logger.service_warning(
                 self,
-                f"Ingen retningslinjer_notat_prompt med sekvens_nr=1 fundet",
+                "Ingen retningslinjer_notat_prompt med sekvens_nr=1 fundet",
             )
         if not retningslinjer_notat_val_prompt:
             self.service_logger.service_warning(
                 self,
-                f"Ingen retningslinjer_notat_val_prompt med sekvens_nr=2 fundet",
+                "Ingen retningslinjer_notat_val_prompt med sekvens_nr=2 fundet",
             )
         if not hallucination_prompt:
             self.service_logger.service_warning(
                 self,
-                f"Ingen hallucination_prompt med sekvens_nr=3 fundet",
+                "Ingen hallucination_prompt med sekvens_nr=3 fundet",
             )
         if not samtale_kvalitet_prompt:
             self.service_logger.service_warning(
                 self,
-                f"Ingen samtale_kvalitet_prompt med sekvens_nr=4 fundet",
+                "Ingen samtale_kvalitet_prompt med sekvens_nr=4 fundet",
             )
 
         return (
@@ -338,6 +336,7 @@ class JNPromptsBusinessComponent(NonSessionComponent, ServiceRunner):
                 "api_version",
                 "sekvens_nr",
             ],
+            strict=False,
         ):
             if val is None or (isinstance(val, str) and val.strip() == ""):
                 self.service_logger.service_warning(
@@ -347,9 +346,7 @@ class JNPromptsBusinessComponent(NonSessionComponent, ServiceRunner):
                 return 400
 
         # Indsæt data i jn.notat
-        self._sql_insert_into(
-            model, prompt, ordning, er_evaluering, api_version, sekvens_nr
-        )
+        self._sql_insert_into(model, prompt, ordning, er_evaluering, api_version, sekvens_nr)
 
         return 200
 
