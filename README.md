@@ -1,10 +1,18 @@
 # Journalnotats-Assistent
 
+[![CI](https://github.com/atp-open-source/jn-assistent/actions/workflows/ci.yml/badge.svg)](https://github.com/atp-open-source/jn-assistent/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/atp-open-source/jn-assistent/actions/workflows/codeql.yml/badge.svg)](https://github.com/atp-open-source/jn-assistent/actions/workflows/codeql.yml)
+[![License](https://img.shields.io/badge/license-ATP%20Open%20Source-blue.svg)](LICENSE.md)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](pyproject.toml)
+[![Bidrag velkomne](https://img.shields.io/badge/bidrag-velkomne-brightgreen.svg)](CONTRIBUTING.md)
+
 Et AI-drevet system til automatisk optagelse, transskribering og generering af journalnotater fra telefonsamtaler mellem borgere og kunderådgivere. Fra opkald afsluttes til færdigt notat er klar hos kunderådgiveren tager det ca. **6 sekunder**.
 
 ![System overblik](jn_overview.png)
 
 > **Bemærk:** Dette repo er et udpluk af koden og er i nuværende stadie ikke fuldt funktionsdygtig, men mere en inspirationskilde til, hvordan sådan et system kan struktureres.
+>
+> **Bidrag er velkomne!** Se [`CONTRIBUTING.md`](CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) og [`SECURITY.md`](SECURITY.md).
 
 ---
 

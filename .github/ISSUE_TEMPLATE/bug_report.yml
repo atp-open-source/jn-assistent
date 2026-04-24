@@ -1,0 +1,79 @@
+name: 🐛 Fejlrapport
+description: Rapportér noget, der ikke fungerer som forventet.
+title: "[fejl]: "
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tak fordi du tager dig tid til at rapportere en fejl. Udfyld venligst
+        så mange detaljer som muligt.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Berørt komponent
+      options:
+        - audio_streamer (Windows-desktop)
+        - leverance (Flask-backend)
+        - aiservice (Azure OpenAI-wrapper)
+        - fe (Vue-frontend)
+        - CI, tooling eller dokumentation
+        - Usikker
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Hvad skete der?
+      description: En tydelig beskrivelse af fejlen.
+      placeholder: Da jeg … forventede jeg … men fik i stedet …
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Trin til reproduktion
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Forventet adfærd
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevante logs eller output
+      render: shell
+
+  - type: input
+    id: version
+    attributes:
+      label: Version eller commit
+      placeholder: "v0.1.0 eller commit-sha"
+
+  - type: input
+    id: environment
+    attributes:
+      label: Miljø
+      placeholder: "OS, Python-version, Node-version, browser …"
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Tjekliste
+      options:
+        - label: Jeg har søgt i eksisterende issues og ikke fundet en dublet.
+          required: true
+        - label: Jeg er villig til at hjælpe med at fejlsøge eller give yderligere oplysninger.
+          required: false

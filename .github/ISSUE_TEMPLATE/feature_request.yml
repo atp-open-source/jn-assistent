@@ -1,0 +1,29 @@
+name: ✨ Forslag til ny funktion
+description: Foreslå en ny funktion eller forbedring.
+title: "[forslag]: "
+labels: [enhancement, triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem og motivation
+      description: Hvad forsøger du at opnå? Hvad er besværligt i dag?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Forslag til løsning
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Overvejede alternativer
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Yderligere kontekst

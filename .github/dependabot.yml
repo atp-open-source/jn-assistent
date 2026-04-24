@@ -1,0 +1,49 @@
+version: 2
+updates:
+  # Python-workspace (rod + hver sub-pakke)
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Copenhagen
+    open-pull-requests-limit: 5
+    groups:
+      python-minor-and-patch:
+        update-types: [minor, patch]
+    labels: [dependencies, python]
+
+  - package-ecosystem: pip
+    directory: "/aiservice"
+    schedule: { interval: weekly }
+    labels: [dependencies, python]
+
+  - package-ecosystem: pip
+    directory: "/audio_streamer"
+    schedule: { interval: weekly }
+    labels: [dependencies, python]
+
+  - package-ecosystem: pip
+    directory: "/leverance"
+    schedule: { interval: weekly }
+    labels: [dependencies, python]
+
+  # GitHub Actions selv
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule: { interval: weekly }
+    groups:
+      actions:
+        patterns: ["*"]
+    labels: [dependencies, github-actions]
+
+  # Frontend (aktiveres, når fe/package.json findes)
+  - package-ecosystem: npm
+    directory: "/fe"
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+    labels: [dependencies, frontend]

@@ -1,0 +1,12 @@
+# Hver PR beder automatisk om review fra de vedligeholdere, der er angivet
+# herunder. Udskift pladsholder-team/-bruger med de faktiske vedligeholdere.
+# Se: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+
+*                       @@atp-open-source/oss-jn-assistent-maintainers
+
+# Komponentejere
+/audio_streamer/        @@atp-open-source/oss-jn-assistent-maintainers
+/leverance/             @@atp-open-source/oss-jn-assistent-maintainers
+/aiservice/             @@atp-open-source/oss-jn-assistent-maintainers
+/fe/                    @@atp-open-source/oss-jn-assistent-maintainers
+/.github/               @@atp-open-source/oss-jn-assistent-maintainers

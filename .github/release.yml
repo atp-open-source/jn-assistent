@@ -1,0 +1,22 @@
+# Kategoriserer auto-genererede release-noter ud fra PR-labels.
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+      - dependencies
+    authors:
+      - dependabot
+      - github-actions
+  categories:
+    - title: 💥 Brydende ændringer
+      labels: [breaking]
+    - title: 🚀 Nye funktioner
+      labels: [feature, enhancement]
+    - title: 🐛 Fejlrettelser
+      labels: [bug, fix]
+    - title: 📚 Dokumentation
+      labels: [documentation]
+    - title: 🧰 Vedligehold
+      labels: [chore, refactor, test, ci]
+    - title: Øvrige ændringer
+      labels: ["*"]

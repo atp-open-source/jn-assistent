@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Annullér tidligere kørsler på samme gren eller PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------
+  # 1. Python lint + format-tjek (hurtig feedback, kun Linux)
+  # ---------------------------------------------------------------
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installér ruff
+        run: pip install ruff==0.6.9
+
+      - name: Ruff lint
+        run: ruff check .
+
+      - name: Ruff format (kun tjek)
+        run: ruff format --check .
+
+  # ---------------------------------------------------------------
+  # 2. Python-tests — kører både på Linux og Windows, så vi både
+  #    eksekverer de Linux-kompatible moduler (aiservice, leverance)
+  #    OG den Windows-specifikke audio_streamer-stak.
+  # ---------------------------------------------------------------
+  pytest:
+    name: pytest (${{ matrix.os }} / py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Installér PDM
+        run: pip install pdm==2.19.2
+
+      - name: Installér workspace (Linux — uden Windows-ekstras)
+        if: runner.os != 'Windows'
+        run: pdm install --dev --no-lock
+
+      - name: Installér workspace + Windows-ekstras (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Lyd-afhængigheder (PortAudio m.m.) bruges kun på Windows og
+          # følger med pyaudio-wheels, så `pdm install` er tilstrækkeligt.
+          pdm install --dev --no-lock -G :all
+
+      - name: Kør pytest
+        run: pdm run pytest -ra --maxfail=1
+
+      - name: Upload coverage (hvis genereret)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: |
+            .coverage
+            htmlcov/
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------
+  # 3. Frontend — pladsholder, indtil fe/ har en package.json.
+  #    Jobbet er klar, så snart Vue-projektet er bootstrappet
+  #    (`npm init vue@latest`).
+  # ---------------------------------------------------------------
+  frontend:
+    name: Frontend-build
+    runs-on: ubuntu-latest
+    if: hashFiles('fe/package.json') != ''
+    defaults:
+      run:
+        working-directory: fe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: fe/package-lock.json
+      - run: npm ci
+      - run: npm run lint --if-present
+      - run: npm run type-check --if-present
+      - run: npm run test --if-present -- --run
+      - run: npm run build --if-present

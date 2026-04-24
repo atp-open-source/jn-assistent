@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Rapportér et sikkerhedshul
+    url: https://github.com/atp-open-source/jn-assistent/security/advisories/new
+    about: Sikkerhedshuller rapporteres privat via GitHub Security Advisories. Se SECURITY.md.
+  - name: 💬 Spørgsmål og diskussion
+    url: https://github.com/atp-open-source/jn-assistent/discussions
+    about: Stil et spørgsmål eller del en idé med fællesskabet.
