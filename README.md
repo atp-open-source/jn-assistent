@@ -81,8 +81,6 @@ Du kan starte **hele systemet lokalt med én kommando** — uden Azure-konto, Op
 | Azure SQL / SQL Server | **SQL Server** i container, seedet med en `TEST`-agent |
 | `audio_streamer.exe` (Windows) | **`simulate_call.py`** (efterligner et helt opkald) |
 
-> En komplet, dybere reference findes i [`RUNNING.md`](RUNNING.md). Nedenstående er hurtig-starten.
-
 ### Forudsætninger
 
 - Docker + Docker Compose (v2)
