@@ -31,13 +31,10 @@ def _build_spark_config() -> Config:
     try:
         return Config(config_name)
     except TypeError:
-        try:
-            return Config(name=config_name)
-        except TypeError:
-            config = Config()
-            if not getattr(config, "NAME", None):
-                config.NAME = config_name
-            return config
+        config = Config()
+        if not getattr(config, "NAME", None):
+            config.NAME = config_name
+        return config
 
 
 def create_app() -> Flask:
