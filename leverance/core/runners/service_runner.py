@@ -51,7 +51,8 @@ class ServiceRunner(ABC):  # noqa: B024 - shim bevarer framework'ets ABC-signatu
             echo=False,
             poolclass=NullPool,
         )
-        if "database.windows.net" in str(self.engine.url.host):
+        host = (self.engine.url.host or "").lower()
+        if host == "database.windows.net" or host.endswith(".database.windows.net"):
             use_access_token_for_azure_sql(self.engine)
         self.sessionfactory = sessionmaker(bind=self.engine, expire_on_commit=False)
         self.session = self.sessionfactory()
