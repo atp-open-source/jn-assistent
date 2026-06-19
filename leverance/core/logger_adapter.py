@@ -10,6 +10,13 @@ class ServiceLoggerAdapter(Logger):
     """Lille adapter som giver samme logging-surface som leverance.core."""
 
     def __init__(self, logger: Logger, request_uid: str | None = None):
+        super().__init__(
+            log_directory=getattr(logger, "_log_directory", None),
+            log_file=getattr(logger, "_log_file", None),
+            log_level=getattr(logger, "_log_level", None),
+            app=getattr(logger, "applikation", None),
+            execution_trace_id=getattr(logger, "execution_trace_id", None),
+        )
         if isinstance(logger, StubLogger):
             self._logs_grouping_key = logger._logs_grouping_key
             self.messages = logger.messages
