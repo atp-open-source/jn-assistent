@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from abc import ABC
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Literal
@@ -12,6 +13,8 @@ from sqlalchemy.pool import NullPool
 from spark_core.app import App
 from spark_core.config.base_config import Config, get_project_config
 from spark_core.database.db_utils import execute_sql, use_access_token_for_azure_sql
+
+logger = logging.getLogger(__name__)
 
 
 class ServiceRunner(ABC):  # noqa: B024 - shim bevarer framework'ets ABC-signatur
@@ -72,8 +75,8 @@ class ServiceRunner(ABC):  # noqa: B024 - shim bevarer framework'ets ABC-signatu
             if getattr(self, "session", None) is not None:
                 self.session.close()
             for session in list(getattr(self, "sessions", {}).values()):
-                session.close()
-            if getattr(self, "engine", None) is not None:
+        except (KeyError, AttributeError, sqlalchemy.exc.ProgrammingError) as exc:
+            logger.debug("Ignoring cleanup error in ServiceRunner.__del__: %s", exc)
                 self.engine.dispose()
             if getattr(self, "threadpool", None) is not None:
                 self.threadpool.shutdown(wait=False)
