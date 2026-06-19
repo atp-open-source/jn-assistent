@@ -58,12 +58,16 @@ class ServiceRunner(ABC):  # noqa: B024 - shim bevarer framework'ets ABC-signatu
         self.session = self.sessionfactory()
         self.sessions = {}
         self.threadpool = ThreadPoolExecutor(max_workers=self.app.config.NUM_THREADS_SERVICE)
+        self._closed = False
 
     @classmethod
     def get_component_name(cls):
         return cls.__name__
 
-    def __del__(self):
+    def close(self):
+        if getattr(self, "_closed", False):
+            return
+        self._closed = True
         try:
             if getattr(self, "session", None) is not None:
                 self.session.close()
@@ -74,6 +78,12 @@ class ServiceRunner(ABC):  # noqa: B024 - shim bevarer framework'ets ABC-signatu
             if getattr(self, "threadpool", None) is not None:
                 self.threadpool.shutdown(wait=False)
         except (KeyError, AttributeError, sqlalchemy.exc.ProgrammingError):
+            pass
+
+    def __del__(self):
+        try:
+            self.close()
+        except Exception:
             pass
 
     def execute_sql(
