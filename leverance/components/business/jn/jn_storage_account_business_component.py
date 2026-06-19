@@ -1,3 +1,4 @@
+import os
 import re
 from datetime import datetime, timedelta
 from uuid import UUID
@@ -36,14 +37,38 @@ class JNStorageAccountBusinessComponent(ServiceRunner):
 
         self.service_logger = ServiceLoggerAdapter(self.app.log)
 
-    def get_token(self) -> str:
+    def _is_local_mode(self) -> bool:
+        return os.getenv("JN_LOCAL_MODE") == "1" or bool(
+            os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        )
+
+    def _get_local_connection_string(self) -> str:
+        connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        if connection_string:
+            return connection_string
+
+        return (
+            # Emulator-style connection string: triggers the Azure SDK's
+            # development-storage request signing, which Azurite accepts.
+            # (An explicit account/endpoint string fails Azurite shared-key
+            # auth due to path-style canonicalisation differences.)
+            "UseDevelopmentStorage=true"
+        )
+
+    def get_token(self) -> dict[str, str | datetime]:
         """
         Opretter et token til Azure Storage-kontoen ved hjælp af de konfigurerede
         credentials.
 
         Returns:
-            str: Token til Azure Storage-kontoen
+            dict[str, str | datetime]: Token til Azure Storage-kontoen
         """
+        if self._is_local_mode():
+            return {
+                "token": "local-development-token",
+                "expires_on": datetime.now() + timedelta(seconds=self.TTL),
+            }
+
         try:
             # Hent credential til Azure
             authentication = get_auth_based_on_env(
@@ -94,6 +119,33 @@ class JNStorageAccountBusinessComponent(ServiceRunner):
         """
         queue_name_format = self._format_name(queue_name)
 
+        if self._is_local_mode():
+            try:
+                queue_service_client = QueueServiceClient.from_connection_string(
+                    self._get_local_connection_string()
+                )
+
+                queue_client = queue_service_client.get_queue_client(queue_name_format)
+
+                try:
+                    queue_client.get_queue_properties()
+                    self.service_logger.service_info(
+                        self, f"Køen '{queue_name_format}' eksisterer i Azure Queue."
+                    )
+                except Exception:
+                    queue_client.create_queue()
+                    self.service_logger.service_info(
+                        self, f"Køen '{queue_name_format}' blev oprettet i Azure Queue."
+                    )
+
+                return queue_client
+
+            except Exception as e:
+                self.service_logger.service_exception(
+                    self, f"Fejl ved oprettelse af QueueClient {queue_name_format}: {e}"
+                )
+                return None
+
         account_url = f"https://{self.app.config.JN_AZURE_STORAGE_ACCOUNT}.queue.core.windows.net"
         authentication = get_auth_based_on_env(
             self.app,
@@ -141,6 +193,19 @@ class JNStorageAccountBusinessComponent(ServiceRunner):
         Returnerer:
             ContainerClient: Den oprettede Azure Container klient.
         """
+        if self._is_local_mode():
+            try:
+                return ContainerClient.from_connection_string(
+                    conn_str=self._get_local_connection_string(),
+                    container_name=container_name,
+                )
+            except Exception as e:
+                self.service_logger.service_exception(
+                    self,
+                    f"Fejl ved oprettelse af ContainerClient for container {container_name}: {e}",
+                )
+                return None
+
         # Opret account_url
         account_url = f"https://{self.app.config.JN_AZURE_STORAGE_ACCOUNT}.blob.core.windows.net"
         authentication = get_auth_based_on_env(

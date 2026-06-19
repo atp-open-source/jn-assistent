@@ -215,6 +215,13 @@ class JNNotatBusinessComponent(NonSessionComponent, ServiceRunner):
 
         messages = None
 
+        if queue_client is None:
+            self.service_logger.service_warning(
+                self,
+                f"Kunne ikke oprette QueueClient for {queue_name}",
+            )
+            return messages
+
         msg_page = queue_client.peek_messages(max_messages=self.max_msg)
         # hvis der stadig er flere beskeder i køen, slet alle beskeder undtagen den sidste
         if len(msg_page) > 1:

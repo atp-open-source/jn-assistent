@@ -1,4 +1,5 @@
 import json
+import os
 import time
 import uuid
 from datetime import datetime as dt
@@ -75,6 +76,14 @@ class BaseAzureStorage:
         else:
             self.queue_status_client, self.queue_status_expire = None, None
 
+    def _is_local_storage_mode(self) -> bool:
+        return os.getenv("JN_LOCAL_MODE") == "1" or bool(
+            os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        )
+
+    def _get_local_connection_string(self) -> str | None:
+        return os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+
     def _create_client(
         self,
         is_queue: bool = True,
@@ -86,6 +95,32 @@ class BaseAzureStorage:
         """
         if not (queue_name or container_name):
             raise ValueError("queue_name or container_name must be provided")
+
+        if self._is_local_storage_mode():
+            connection_string = self._get_local_connection_string()
+            if not connection_string:
+                raise ValueError(
+                    "Local storage mode kræver AZURE_STORAGE_CONNECTION_STRING"
+                )
+
+            expires = dt.now().timestamp() + 3600
+            if is_queue:
+                client = QueueServiceClient.from_connection_string(connection_string)
+                queue_client = client.get_queue_client(queue_name)
+                try:
+                    queue_client.get_queue_properties()
+                    logger.info(f"Queue '{queue_name}' found in local storage.")
+                except Exception:
+                    queue_client.create_queue()
+                    logger.info(f"Queue '{queue_name}' created in local storage.")
+                return queue_client, expires
+
+            client = BlobServiceClient.from_connection_string(connection_string)
+            container_client = client.get_container_client(container_name)
+            if not container_client.exists():
+                container_client.create_container()
+                logger.info(f"Container '{container_name}' created in local storage.")
+            return container_client, expires
 
         resource = "queue" if is_queue else "blob"
         account_url = f"https://{self.config.STORAGE_ACCOUNT_NAME}.{resource}.core.windows.net"

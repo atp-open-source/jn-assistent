@@ -1,0 +1,11 @@
+{
+  "JN_AZURE_IDENTITY_TENANT_ID": "local-tenant-id",
+  "JN_AZURE_IDENTITY_CLIENT_ID": "local-client-id",
+  "JN_AZURE_IDENTITY_CLIENT_SECRET": "local-client-secret",
+  "JN_AZURE_OPENAI_API_ENDPOINT": "http://mock-llm:8000",
+  "JN_AZURE_OPENAI_API_VERSION": "2024-10-21",
+  "JN_AZURE_OPENAI_DEPLOYMENT_NAME": "gpt-4o",
+  "DA_SPARK_AZURE_IDENTITY_TENANT_ID": "local-tenant-id",
+  "DA_SPARK_AZURE_IDENTITY_CLIENT_ID": "local-client-id",
+  "DA_SPARK_AZURE_IDENTITY_CLIENT_SECRET": "local-client-secret"
+}

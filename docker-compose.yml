@@ -1,0 +1,133 @@
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    env_file:
+      - .env.docker
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+    ports:
+      - "14333:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" >/dev/null 2>&1 || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    command:
+      [
+        "azurite",
+        "--blobHost",
+        "0.0.0.0",
+        "--queueHost",
+        "0.0.0.0",
+        "--tableHost",
+        "0.0.0.0",
+        "--location",
+        "/data",
+        "--skipApiVersionCheck",
+        "--loose",
+        "--debug",
+        "/data/debug.log",
+      ]
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    volumes:
+      - azurite-data:/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net'); const ports=[10000,10001,10002]; let pending=ports.length; const fail=()=>process.exit(1); ports.forEach((port)=>{ const socket=net.connect(port,'127.0.0.1',()=>{ socket.end(); if(--pending===0) process.exit(0); }); socket.on('error', fail); });\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+
+  mock-llm:
+    build:
+      context: .
+      dockerfile: mock_llm/Dockerfile
+    ports:
+      - "8001:8000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/docs').read()\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+  db-init:
+    build:
+      context: ./infra/db
+      dockerfile: Dockerfile
+    env_file:
+      - .env.docker
+    depends_on:
+      mssql:
+        condition: service_healthy
+    volumes:
+      - ./infra/db:/scripts:ro
+    working_dir: /scripts
+    command: ["bash", "/scripts/init.sh"]
+    restart: "no"
+
+  leverance:
+    build:
+      context: .
+      dockerfile: leverance/Dockerfile
+    env_file:
+      - .env.docker
+    depends_on:
+      mssql:
+        condition: service_healthy
+      azurite:
+        condition: service_healthy
+      mock-llm:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz').read()\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./fe
+      dockerfile: Dockerfile
+      args:
+        VITE_API_SERVER: ""
+    depends_on:
+      leverance:
+        condition: service_healthy
+    ports:
+      - "4173:80"
+
+volumes:
+  mssql-data:
+  azurite-data:

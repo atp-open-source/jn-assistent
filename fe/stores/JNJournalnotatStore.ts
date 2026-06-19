@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { useApiStore } from "../stores/JNapi.js";
+import { useApiStore } from "../stores/JNapi";
 import DOMPurify from "dompurify";
 
 /*

@@ -118,6 +118,14 @@ class AzureOpenAITranscriber:
         )
         logger.info(f"Call_id: {self.call_id} Azure OpenAI client initialized successfully.")
 
+    def _is_local_storage_mode(self) -> bool:
+        return os.getenv("JN_LOCAL_MODE") == "1" or bool(
+            os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        )
+
+    def _get_local_connection_string(self) -> str | None:
+        return os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+
     def _get_storage_token(self) -> TokenCredentialAdapter | None:
         """
         Henter token til Azure Storage.
@@ -152,6 +160,26 @@ class AzureOpenAITranscriber:
         Opretter en klient til Azure Blob Storage.
         """
 
+        if self._is_local_storage_mode():
+            connection_string = self._get_local_connection_string()
+            if not connection_string:
+                logger.error(
+                    f"Call_id {self.call_id}: Local storage mode enabled without AZURE_STORAGE_CONNECTION_STRING."
+                )
+                return None
+
+            try:
+                blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+                logger.info(
+                    f"Call_id {self.call_id}: BlobServiceClient created from local connection string."
+                )
+                return blob_service_client
+            except Exception as e:
+                logger.exception(
+                    f"Call_id {self.call_id}: Error creating local BlobServiceClient: {e}"
+                )
+                return None
+
         token_credential = self._get_storage_token()
         if not token_credential:
             logger.error(
@@ -180,6 +208,26 @@ class AzureOpenAITranscriber:
         """
         Opretter en klient til Azure Queue Storage.
         """
+
+        if self._is_local_storage_mode():
+            connection_string = self._get_local_connection_string()
+            if not connection_string:
+                logger.error(
+                    f"Call_id {self.call_id}: Local storage mode enabled without AZURE_STORAGE_CONNECTION_STRING."
+                )
+                return None
+
+            try:
+                queue_client = QueueServiceClient.from_connection_string(connection_string)
+                logger.info(
+                    f"Call_id {self.call_id}: QueueServiceClient created from local connection string."
+                )
+                return queue_client
+            except Exception as e:
+                logger.exception(
+                    f"Call_id {self.call_id}: Error creating local QueueServiceClient: {e}"
+                )
+                return None
 
         token_credential = self._get_storage_token()
         if not token_credential:
@@ -211,7 +259,12 @@ class AzureOpenAITranscriber:
             return False
 
         try:
-            queue_client.get_queue_client(queue_name).send_message(data)
+            queue = queue_client.get_queue_client(queue_name)
+            try:
+                queue.create_queue()
+            except Exception:
+                pass
+            queue.send_message(data)
             logger.info(f"Call_id {self.call_id}: Data uploaded to queue '{queue_name}'.")
             return True
         except Exception as e:

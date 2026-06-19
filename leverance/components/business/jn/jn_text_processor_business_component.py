@@ -1,7 +1,10 @@
 import re
 from uuid import UUID
 
-import nltk
+try:
+    import nltk
+except ModuleNotFoundError:  # pragma: no cover - local fallback for app bootstrap
+    from leverance.components.functions import simple_nltk as nltk
 
 from leverance.components.functions.speaker_mapping_function import speaker_mapping
 from leverance.core.runners.service_runner import ServiceRunner

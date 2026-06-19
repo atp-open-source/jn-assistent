@@ -87,7 +87,7 @@ JournalnotatStore funktioner:
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, toRefs } from "vue";
-import { useJournalStore } from "../stores/JNJournalnotatStore.js";
+import { useJournalStore } from "../stores/JNJournalnotatStore";
 import StatusBar from "../components/JNStatusBar.vue";
 import ScaleFeedback from "../components/JNScaleFeedback.vue";
 import NotatFeedback from "../components/JNNotatFeedback.vue";

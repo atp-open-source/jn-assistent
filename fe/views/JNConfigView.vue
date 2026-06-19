@@ -344,7 +344,7 @@ Funktionaliteter:
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from "vue";
-import { useApiStore } from "../stores/JNapi.js";
+import { useApiStore } from "../stores/JNapi";
 import { useToast } from "primevue/usetoast";
 import { useVuelidate } from "@vuelidate/core";
 import { required, minLength, helpers } from "@vuelidate/validators";
