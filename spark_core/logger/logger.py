@@ -137,12 +137,17 @@ class StubLogger(Logger):
     """Logger-variant der opsamler beskeder i hukommelsen."""
 
     def __init__(self, applikation: str = "default_app", group_logs_by: str = "event_name"):
-        self.applikation = applikation
-        self.execution_trace_id = None
-        self._log_directory = ""
-        self._log_file = ""
-        self._log_level = "INFO"
-        self._handlers = []
+        super().__init__(
+            log_directory="",
+            log_file="",
+            log_level="INFO",
+            applikation=applikation,
+            execution_trace_id=None,
+            log_to_console=False,
+            structured_console_log=False,
+            log_to_file=False,
+            use_queue=False,
+        )
         self._logs_grouping_key = group_logs_by
         self.messages: dict[str, list[dict[str, Any]]] = defaultdict(list)
         self.logger = logging.getLogger(f"stub.{applikation}.{id(self)}")
