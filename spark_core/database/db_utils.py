@@ -30,7 +30,9 @@ class _BufferedResult:
         return iter(self.rows)
 
 
-def execute_sql(*args: Any, params: dict[str, Any] | None = None, **kwargs: Any) -> Result | _BufferedResult:
+def execute_sql(
+    *args: Any, params: dict[str, Any] | None = None, **kwargs: Any
+) -> Result | _BufferedResult:
     """Eksekver SQL mod Session, Connection eller Engine.
 
     Understøtter både signaturen `(sql, executor, ...)` og den mere direkte

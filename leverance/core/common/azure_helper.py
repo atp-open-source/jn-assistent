@@ -8,10 +8,11 @@ from typing import Any
 
 from aiservice.authentication import (
     Authentication as ClientSecretAuthentication,
+)
+from aiservice.authentication import (
     BaseAuthentication,
     ManagedIdentityAuthentication,
 )
-
 from spark_core.config.base_config import ConfigEnv
 
 

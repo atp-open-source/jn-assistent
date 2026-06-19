@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Literal
+from typing import Any, Literal
 
 import sqlalchemy
 from sqlalchemy import Connection, Result, create_engine
@@ -14,7 +14,7 @@ from spark_core.config.base_config import Config, get_project_config
 from spark_core.database.db_utils import execute_sql, use_access_token_for_azure_sql
 
 
-class ServiceRunner(ABC):
+class ServiceRunner(ABC):  # noqa: B024 - shim bevarer framework'ets ABC-signatur
     """Minimal shim af leverance.core.runners.ServiceRunner."""
 
     def __init__(
@@ -31,7 +31,9 @@ class ServiceRunner(ABC):
 
         if config_overwrite is not None:
             config = config_overwrite
-        elif isinstance(config_name, Config) or hasattr(config_name, "LEVERANCE_BUSINESS_DATABASE_URI"):
+        elif isinstance(config_name, Config) or hasattr(
+            config_name, "LEVERANCE_BUSINESS_DATABASE_URI"
+        ):
             config = config_name
         else:
             config = get_project_config(environment=config_name)
@@ -96,9 +98,9 @@ class ServiceRunner(ABC):
     def lookup_for_service(
         self,
         session: Session,
-        input_dict: Dict[str, List[Any]],
-        output_column_list: List[str],
-        condition: str = None,
+        input_dict: dict[str, list[Any]],
+        output_column_list: list[str],
+        condition: str | None = None,
         format: Literal["dict", "DataFrame"] = "DataFrame",
     ):
         import pandas as pd
@@ -107,7 +109,7 @@ class ServiceRunner(ABC):
         column = list(input_dict.keys())
         values = list(input_dict.values())
 
-        if len(column) != 1 or type(values[0]) != list:
+        if len(column) != 1 or not isinstance(values[0], list):
             raise ValueError(
                 f"Ugyldigt input ved lookup_for_service for {self.db}.{self.schema}.{self.table}"
             )

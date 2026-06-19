@@ -7,8 +7,10 @@ from flask import Flask, jsonify, request
 try:
     from flask_cors import CORS
 except ModuleNotFoundError:  # pragma: no cover - local bootstrap fallback
-    def CORS(app, *args, **kwargs):
+
+    def CORS(app, *args, **kwargs):  # noqa: N802 - fallback-shim skal matche flask_cors.CORS
         return app
+
 
 try:
     from spark_core.config.base_config import Config

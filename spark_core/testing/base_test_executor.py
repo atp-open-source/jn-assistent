@@ -47,9 +47,9 @@ class DbSession:
                 continue
             try:
                 column = getattr(table, key) if inspect.isclass(table) else table.c[key]
-                if isinstance(column.type, (DateTime, DATETIME, DATETIME2)):
+                if isinstance(column.type, DateTime | DATETIME | DATETIME2):
                     patched[key] = datetime(value.year, value.month, value.day)
-            except Exception:
+            except Exception:  # noqa: S112 - bedste forsøg på dato-konvertering; spring fejlende kolonner over
                 continue
 
         self.session.execute(insert(table).values(patched))
@@ -71,10 +71,19 @@ class BaseTestExecutor:
         self.db_leverance = DbSession(business_uri)
         self.db_dfd_leverance_forretning = DbSession(business_uri)
         self.db_dfd_spark_bestand = DbSession(
-            self.config.create_dburi(os.getenv("DFD_SPARK_BESTAND_DATABASE_NAME", self.config.LEVERANCE_BUSINESS_DATABASE_NAME()))
+            self.config.create_dburi(
+                os.getenv(
+                    "DFD_SPARK_BESTAND_DATABASE_NAME",
+                    self.config.LEVERANCE_BUSINESS_DATABASE_NAME(),
+                )
+            )
         )
         self.db_dfd_spark_kilde = DbSession(
-            self.config.create_dburi(os.getenv("DFD_SPARK_KILDE_DATABASE_NAME", self.config.LEVERANCE_BUSINESS_DATABASE_NAME()))
+            self.config.create_dburi(
+                os.getenv(
+                    "DFD_SPARK_KILDE_DATABASE_NAME", self.config.LEVERANCE_BUSINESS_DATABASE_NAME()
+                )
+            )
         )
         self.db_main = self.db_leverance
         self.snapshot_uid = None
@@ -111,14 +120,14 @@ class BaseTestExecutor:
             sql = f"TRUNCATE TABLE {table.db}.{table.schema}.{table.table}"
             if table.conditions:
                 sql = (
-                    f"DELETE FROM {table.db}.{table.schema}.{table.table} "
+                    f"DELETE FROM {table.db}.{table.schema}.{table.table} "  # noqa: S608 - testoprydning fra betroet tabel-metadata
                     f"WHERE {table.conditions}"
                 )
             try:
                 self.db_leverance.execute_sql(sql)
             except Exception:
                 self.db_leverance.execute_sql(
-                    f"DELETE FROM {table.db}.{table.schema}.{table.table}"
+                    f"DELETE FROM {table.db}.{table.schema}.{table.table}"  # noqa: S608 - testoprydning fra betroet tabel-metadata
                 )
         self.db_leverance.session.commit()
 

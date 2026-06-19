@@ -1,3 +1,4 @@
+import contextlib
 import io
 import json
 import os
@@ -260,10 +261,8 @@ class AzureOpenAITranscriber:
 
         try:
             queue = queue_client.get_queue_client(queue_name)
-            try:
+            with contextlib.suppress(Exception):
                 queue.create_queue()
-            except Exception:
-                pass
             queue.send_message(data)
             logger.info(f"Call_id {self.call_id}: Data uploaded to queue '{queue_name}'.")
             return True

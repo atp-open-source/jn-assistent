@@ -6,7 +6,7 @@ på tværs af alle repos, arver fra.
 from __future__ import annotations
 
 from abc import ABC
-from typing import Any, Dict, List, Literal
+from typing import Any, Literal
 
 from sqlalchemy import Connection, Result
 from sqlalchemy.orm import Session
@@ -15,7 +15,7 @@ from spark_core.app import App
 from spark_core.database.db_utils import execute_sql
 
 
-class BaseComponent(ABC):
+class BaseComponent(ABC):  # noqa: B024 - shim bevarer framework'ets ABC-signatur
     """
     Abstrakt base klasse for alle komponenter.
     """
@@ -56,9 +56,7 @@ class BaseComponent(ABC):
         """
         Kør komponenten.
         """
-        raise NotImplementedError(
-            "Denne komponent understøtter ikke kørsel i batch-tilstand."
-        )
+        raise NotImplementedError("Denne komponent understøtter ikke kørsel i batch-tilstand.")
 
     def execute_for_training(self):
         """
@@ -84,9 +82,9 @@ class BaseComponent(ABC):
     def lookup_for_service(
         self,
         session: Session,
-        input_dict: Dict[str, List[Any]],
-        output_column_list: List[str],
-        condition: str = None,
+        input_dict: dict[str, list[Any]],
+        output_column_list: list[str],
+        condition: str | None = None,
         format: Literal["dict", "DataFrame"] = "DataFrame",
     ):
         """
@@ -125,7 +123,7 @@ class BaseComponent(ABC):
         values = list(input_dict.values())
 
         # Tjekker at data kun anmodes for en enkelt kolonne
-        if len(column) != 1 or type(values[0]) != list:
+        if len(column) != 1 or not isinstance(values[0], list):
             raise ValueError(
                 f"Ugyldigt input ved lookup_for_service for {self.db}.{self.schema}.{self.table}"
             )

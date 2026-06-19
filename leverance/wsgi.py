@@ -7,6 +7,6 @@ app = create_app()
 
 if __name__ == "__main__":
     app.run(
-        host=os.getenv("FLASK_RUN_HOST", "0.0.0.0"),
+        host=os.getenv("FLASK_RUN_HOST", "0.0.0.0"),  # noqa: S104 - bind til alle interfaces er bevidst i container
         port=int(os.getenv("FLASK_RUN_PORT", "5000")),
     )

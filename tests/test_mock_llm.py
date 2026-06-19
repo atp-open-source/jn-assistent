@@ -84,13 +84,16 @@ class _FakeTestClient:
 def _load_mock_llm_module(monkeypatch):
     try:
         import fastapi.testclient as real_testclient
+
         from mock_llm import app as mock_llm_app
 
         return mock_llm_app, real_testclient.TestClient
     except ModuleNotFoundError:
         fastapi_module = types.ModuleType("fastapi")
         fastapi_module.FastAPI = _FakeFastAPI
-        fastapi_module.Header = lambda default=None, alias=None: _Param(default=default, alias=alias)
+        fastapi_module.Header = lambda default=None, alias=None: _Param(
+            default=default, alias=alias
+        )
         fastapi_module.Query = lambda default=None, alias=None: _Param(default=default, alias=alias)
 
         testclient_module = types.ModuleType("fastapi.testclient")

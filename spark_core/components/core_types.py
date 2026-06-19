@@ -4,10 +4,11 @@ Custom typer, der kan bruges på tværs af alle projekter der bruger spark_core.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
 from enum import Enum
-from typing import Callable, List, get_type_hints
+from typing import get_type_hints
 
 
 @dataclass
@@ -22,7 +23,7 @@ class OutputTable:
     next_sanitize_date: date = None
     component_name: str = None
     audit_id_table: str = None
-    index_columns: List = field(default_factory=lambda: [])
+    index_columns: list = field(default_factory=lambda: [])
     rows_before_run: int = 0
 
 
@@ -48,18 +49,17 @@ def check_types(function: Callable):
 
         output = function(*args, **kwargs)
 
-        if "return" in hints:
-            if not issubclass(type(output), hints["return"]):
-                raise TypeError(
-                    f"Output er type: '{type(output).__name__}' og burde have været type: '{hints['return'].__name__}'"
-                )
+        if "return" in hints and not issubclass(type(output), hints["return"]):
+            raise TypeError(
+                f"Output er type: '{type(output).__name__}' og burde have været type: '{hints['return'].__name__}'"
+            )
 
         return output
 
     return checker
 
 
-class NonSqlStatement(object):
+class NonSqlStatement:
     """
     Dekorator til brug for funktionskald, der ikke er SQL statements.
     Denne dekorator sikrer, at 'print query'-kommandoen

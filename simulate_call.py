@@ -24,6 +24,7 @@ Kræver pakkerne fra .venv (azure-storage-blob, requests):
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import sys
 import time
@@ -67,7 +68,9 @@ def _status_row(call_id: str, agent: str, queue: str, cpr: str, status: str) -> 
     }
 
 
-def _line(call_id: str, agent: str, queue: str, cpr: str, speaker: str, ts: str, sentence: str) -> dict:
+def _line(
+    call_id: str, agent: str, queue: str, cpr: str, speaker: str, ts: str, sentence: str
+) -> dict:
     return {
         "type": "transcript",
         "call_id": call_id,
@@ -89,11 +92,11 @@ def send_status(agent: str, call_id: str, status: str) -> None:
     backendens ``azure_notify_status``.
     """
     queue_name = f"status-{agent.lower()}"
-    queue_client = QueueServiceClient.from_connection_string(CONNECTION_STRING).get_queue_client(queue_name)
-    try:
+    queue_client = QueueServiceClient.from_connection_string(CONNECTION_STRING).get_queue_client(
+        queue_name
+    )
+    with contextlib.suppress(ResourceExistsError):
         queue_client.create_queue()
-    except ResourceExistsError:
-        pass
 
     message = {"call_id": call_id, "status": status, "timestamp": time.time()}
     queue_client.send_message(json.dumps(message))
@@ -104,25 +107,44 @@ def upload_transcriptions(call_id: str, agent: str, queue: str, cpr: str) -> Non
     """Læg agent- og caller-transcriptions i Azurite."""
     agent_rows = [
         _status_row(call_id, agent, queue, cpr, "start"),
-        _line(call_id, agent, queue, cpr, "agent", "1.0",
-              "Velkommen til kommunen, hvad kan jeg hjælpe med?"),
-        _line(call_id, agent, queue, cpr, "agent", "3.0",
-              "Jeg kan se din sag og giver dig en status nu."),
+        _line(
+            call_id,
+            agent,
+            queue,
+            cpr,
+            "agent",
+            "1.0",
+            "Velkommen til kommunen, hvad kan jeg hjælpe med?",
+        ),
+        _line(
+            call_id,
+            agent,
+            queue,
+            cpr,
+            "agent",
+            "3.0",
+            "Jeg kan se din sag og giver dig en status nu.",
+        ),
         _status_row(call_id, agent, queue, cpr, "end"),
     ]
     caller_rows = [
         _status_row(call_id, agent, queue, cpr, "start"),
-        _line(call_id, agent, queue, cpr, "caller", "2.0",
-              "Hej, jeg ringer for at høre status på min sag."),
+        _line(
+            call_id,
+            agent,
+            queue,
+            cpr,
+            "caller",
+            "2.0",
+            "Hej, jeg ringer for at høre status på min sag.",
+        ),
         _line(call_id, agent, queue, cpr, "caller", "4.0", "Tak, det lyder fint."),
         _status_row(call_id, agent, queue, cpr, "end"),
     ]
 
     container = ContainerClient.from_connection_string(CONNECTION_STRING, CONTAINER_NAME)
-    try:
+    with contextlib.suppress(ResourceExistsError):
         container.create_container()
-    except ResourceExistsError:
-        pass
 
     for speaker, rows in (("agent", agent_rows), ("caller", caller_rows)):
         blob = f"transcriptions-{call_id}-{speaker}.jsonl"
@@ -171,7 +193,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"[{_ts()}]    Call ID: {call_id}")
     print(f"[{_ts()}]    Agent:   {agent}")
     print()
-    print(f"💡 Åbn frontenden NU, så kan du se den opdatere sig live:")
+    print("💡 Åbn frontenden NU, så kan du se den opdatere sig live:")
     print(f"   {args.frontend}/?username={agent}")
     print()
 
@@ -194,7 +216,7 @@ def main(argv: list[str] | None = None) -> int:
                 f"opdager 'end-call' og viser \"Genererer notat...\" ..."
             )
             time.sleep(SLEEP_AFTER_END_CALL)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"[{_ts()}] ❌ FEJL ved Azurite/kø: {exc}", file=sys.stderr)
         return 1
 
@@ -241,7 +263,7 @@ def main(argv: list[str] | None = None) -> int:
     print()
     print(f"[{_ts()}] ✅ Simulering færdig")
     print()
-    print(f"📱 Hvis siden allerede er åben, opdaterer den sig selv inden for ~2 sek.")
+    print("📱 Hvis siden allerede er åben, opdaterer den sig selv inden for ~2 sek.")
     print(f"   Ellers åbn:  {args.frontend}/?username={agent}")
     print()
     return 0

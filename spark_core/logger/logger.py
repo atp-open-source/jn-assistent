@@ -95,16 +95,20 @@ class Logger:
     def info(self, message: str, color: str | None = None, style: str | None = None, **extra: Any):
         self.logger.info(f"{message}{self._serialize_extra(self._bind_variables(**extra))}")
 
-    def warning(self, message: str, color: str | None = None, style: str | None = None, **extra: Any):
+    def warning(
+        self, message: str, color: str | None = None, style: str | None = None, **extra: Any
+    ):
         self.logger.warning(f"{message}{self._serialize_extra(self._bind_variables(**extra))}")
 
     def error(self, message: str, color: str | None = None, style: str | None = None, **extra: Any):
         self.logger.error(f"{message}{self._serialize_extra(self._bind_variables(**extra))}")
 
-    def exception(self, message: str, color: str | None = None, style: str | None = None, **extra: Any):
+    def exception(
+        self, message: str, color: str | None = None, style: str | None = None, **extra: Any
+    ):
         self.logger.exception(f"{message}{self._serialize_extra(self._bind_variables(**extra))}")
 
-    def copy(self, **init_kwargs: Any) -> "Logger":
+    def copy(self, **init_kwargs: Any) -> Logger:
         kwargs = {
             "log_directory": self._log_directory,
             "log_file": self._log_file,
@@ -158,11 +162,15 @@ class StubLogger(Logger):
     def info(self, message: str, color: str | None = None, style: str | None = None, **extra: Any):
         self._store("info", message, **extra)
 
-    def warning(self, message: str, color: str | None = None, style: str | None = None, **extra: Any):
+    def warning(
+        self, message: str, color: str | None = None, style: str | None = None, **extra: Any
+    ):
         self._store("warning", message, **extra)
 
     def error(self, message: str, color: str | None = None, style: str | None = None, **extra: Any):
         self._store("error", message, **extra)
 
-    def exception(self, message: str, color: str | None = None, style: str | None = None, **extra: Any):
+    def exception(
+        self, message: str, color: str | None = None, style: str | None = None, **extra: Any
+    ):
         self._store("exception", message, **extra)

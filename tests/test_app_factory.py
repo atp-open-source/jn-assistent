@@ -6,7 +6,6 @@ from flask import jsonify, request
 
 from leverance.app import create_app
 
-
 REQUIRED_API_ROUTES = {
     "/api/jn/fetch_status",
     "/api/jn/get_notat",

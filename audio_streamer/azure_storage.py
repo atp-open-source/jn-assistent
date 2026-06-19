@@ -99,9 +99,7 @@ class BaseAzureStorage:
         if self._is_local_storage_mode():
             connection_string = self._get_local_connection_string()
             if not connection_string:
-                raise ValueError(
-                    "Local storage mode kræver AZURE_STORAGE_CONNECTION_STRING"
-                )
+                raise ValueError("Local storage mode kræver AZURE_STORAGE_CONNECTION_STRING")
 
             expires = dt.now().timestamp() + 3600
             if is_queue:

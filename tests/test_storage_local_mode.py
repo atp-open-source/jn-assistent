@@ -3,14 +3,13 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import uuid4
 
-from spark_core.app import App
-from spark_core.config.base_config import Config
-
 from leverance.components.business.jn import jn_storage_account_business_component as storage_module
 from leverance.components.business.jn.jn_storage_account_business_component import (
     JNStorageAccountBusinessComponent,
 )
 from leverance.core.runners.service_runner import ServiceRunner
+from spark_core.app import App
+from spark_core.config.base_config import Config
 
 
 def _fake_service_runner_init(self, service_name, request_uid=None, **_kwargs):

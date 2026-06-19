@@ -102,7 +102,7 @@ def run() -> None:
 
     uvicorn.run(
         "mock_llm.app:app",
-        host=os.getenv("HOST", "0.0.0.0"),
+        host=os.getenv("HOST", "0.0.0.0"),  # noqa: S104 - bind til alle interfaces er bevidst i container
         port=int(os.getenv("PORT", "8000")),
         reload=False,
     )

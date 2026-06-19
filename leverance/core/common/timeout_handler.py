@@ -4,7 +4,7 @@ import threading
 from spark_core.logger.logger import Logger
 
 
-class TimeoutException(Exception):
+class TimeoutException(Exception):  # noqa: N818 - navn matcher leverance.core-framework'et
     """Custom exception til at indikere timeout"""
 
     def __init__(self, message, timeout_duration):
@@ -51,9 +51,7 @@ def run_with_timeout(
                 if log_besked:
                     print("Logging timeout besked - søg her")
                     if not hasattr(Logger, log_type):
-                        raise ValueError(
-                            f"Der findes ingen log metode af typen: '{log_type}'"
-                        )
+                        raise ValueError(f"Der findes ingen log metode af typen: '{log_type}'")
                     logger = args[0].app.log
                     log_method = getattr(Logger, log_type)
                     log_method(logger, log_besked)

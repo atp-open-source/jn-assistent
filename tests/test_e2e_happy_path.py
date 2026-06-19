@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import time
@@ -9,7 +10,6 @@ import pytest
 import requests
 from azure.core.exceptions import ResourceExistsError
 from azure.storage.blob import ContainerClient
-
 
 pytestmark = pytest.mark.skipif(
     not os.getenv("JN_E2E_BASE_URL") or not os.getenv("AZURE_STORAGE_CONNECTION_STRING"),
@@ -34,10 +34,8 @@ def test_process_call_happy_path_against_live_stack():
         conn_str=connection_string,
         container_name="transcriptions",
     )
-    try:
+    with contextlib.suppress(ResourceExistsError):
         container.create_container()
-    except ResourceExistsError:
-        pass
 
     agent_rows = [
         {
