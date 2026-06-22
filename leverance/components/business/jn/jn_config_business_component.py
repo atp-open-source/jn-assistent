@@ -1,11 +1,11 @@
 from typing import Any
 from uuid import UUID
 
-from spark_core.components.base_component import NonSessionComponent
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from leverance.core.logger_adapter import ServiceLoggerAdapter
 from leverance.core.runners.service_runner import ServiceRunner
+from spark_core.components.base_component import NonSessionComponent
 
 
 class JNConfigBusinessComponent(NonSessionComponent, ServiceRunner):
@@ -84,9 +84,7 @@ class JNConfigBusinessComponent(NonSessionComponent, ServiceRunner):
         """
 
         try:
-            result = self.execute_sql(
-                sql, params={"kr_initialer": kr_initialer}
-            ).fetchone()
+            result = self.execute_sql(sql, params={"kr_initialer": kr_initialer}).fetchone()
             self.session.close()
             return dict(result._mapping) if result else self.placeholder_config
         except Exception as e:

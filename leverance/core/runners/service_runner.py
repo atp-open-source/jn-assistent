@@ -75,19 +75,19 @@ class ServiceRunner(ABC):  # noqa: B024 - shim bevarer framework'ets ABC-signatu
             if getattr(self, "session", None) is not None:
                 self.session.close()
             for session in list(getattr(self, "sessions", {}).values()):
-        except (KeyError, AttributeError, sqlalchemy.exc.ProgrammingError) as exc:
-            logger.debug("Ignoring cleanup error in ServiceRunner.__del__: %s", exc)
+                session.close()
+            if getattr(self, "engine", None) is not None:
                 self.engine.dispose()
             if getattr(self, "threadpool", None) is not None:
                 self.threadpool.shutdown(wait=False)
-        except (KeyError, AttributeError, sqlalchemy.exc.ProgrammingError):
-            pass
+        except (KeyError, AttributeError, sqlalchemy.exc.ProgrammingError) as exc:
+            logger.debug("Ignoring cleanup error in ServiceRunner.close(): %s", exc)
 
     def __del__(self):
         try:
             self.close()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Ignoring error in ServiceRunner.__del__: %s", exc)
 
     def execute_sql(
         self, sql: str, executor: Session | Connection = None, *args, **kwargs

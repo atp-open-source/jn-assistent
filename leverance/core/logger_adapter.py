@@ -11,11 +11,13 @@ class ServiceLoggerAdapter(Logger):
 
     def __init__(self, logger: Logger, request_uid: str | None = None):
         super().__init__(
-            log_directory=getattr(logger, "_log_directory", None),
-            log_file=getattr(logger, "_log_file", None),
-            log_level=getattr(logger, "_log_level", None),
-            app=getattr(logger, "applikation", None),
+            log_directory=getattr(logger, "_log_directory", None) or "",
+            log_file=getattr(logger, "_log_file", None) or "application.log",
+            log_level=getattr(logger, "_log_level", None) or "INFO",
+            applikation=getattr(logger, "applikation", None),
             execution_trace_id=getattr(logger, "execution_trace_id", None),
+            log_to_console=False,
+            log_to_file=False,
         )
         if isinstance(logger, StubLogger):
             self._logs_grouping_key = logger._logs_grouping_key
