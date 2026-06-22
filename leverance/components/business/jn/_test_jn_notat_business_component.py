@@ -7,13 +7,13 @@ from unittest import mock
 import numpy as np
 from dateutil.relativedelta import relativedelta
 from freezegun import freeze_time
-from spark_core.testing.base_test_executor import BaseTestExecutor
 
 from leverance import data
 from leverance.components.business.jn.jn_notat_business_component import (
     JNNotatBusinessComponent,
 )
 from leverance.core.common import timeout_handler
+from spark_core.testing.base_test_executor import BaseTestExecutor
 
 
 class TestJNNotatBusinessComponent(unittest.TestCase):
