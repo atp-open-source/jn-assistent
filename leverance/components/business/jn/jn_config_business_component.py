@@ -1,11 +1,11 @@
 from typing import Any
 from uuid import UUID
 
-from spark_core.components.base_component import NonSessionComponent
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from leverance.core.logger_adapter import ServiceLoggerAdapter
 from leverance.core.runners.service_runner import ServiceRunner
+from spark_core.components.base_component import NonSessionComponent
 
 
 class JNConfigBusinessComponent(NonSessionComponent, ServiceRunner):
@@ -80,11 +80,11 @@ class JNConfigBusinessComponent(NonSessionComponent, ServiceRunner):
                 controller_version,
                 forretningsomraade
             FROM {self.kr_config_table}
-            WHERE kr_initialer = '{kr_initialer}'
+            WHERE kr_initialer = :kr_initialer
         """
 
         try:
-            result = self.execute_sql(sql).fetchone()
+            result = self.execute_sql(sql, params={"kr_initialer": kr_initialer}).fetchone()
             self.session.close()
             return dict(result._mapping) if result else self.placeholder_config
         except Exception as e:
@@ -181,14 +181,14 @@ class JNConfigBusinessComponent(NonSessionComponent, ServiceRunner):
 
         sql_delete = f"""
             DELETE FROM {self.kr_config_table}
-            WHERE kr_initialer = '{kr_initialer}'
+            WHERE kr_initialer = :kr_initialer
             """
 
         sql_commit = "COMMIT TRANSACTION"
 
         try:
             self.execute_sql(sql_begin)
-            self.execute_sql(sql_delete)
+            self.execute_sql(sql_delete, params={"kr_initialer": kr_initialer})
             self.execute_sql(sql_commit)
             self.session.commit()
             self.session.close()

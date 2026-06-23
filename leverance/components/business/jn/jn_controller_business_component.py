@@ -240,6 +240,16 @@ class JNControllerBusinessComponent(ServiceRunner):
             # Opret Azure Queue klient med storage account name og storage account key
             queue_client = self.jn_storage_account.create_queue_client(queue_name)
 
+            if queue_client is None:
+                # Køklienten kunne ikke oprettes (fx Azure/Azurite utilgængelig).
+                # Vi degraderer pænt frem for at fejle hele opkaldsbehandlingen.
+                self.service_logger.service_warning(
+                    self,
+                    f"Kunne ikke oprette køklient for status-{agent_id}; "
+                    f"springer end-summary-notifikation over for call-id: {call_id}",
+                )
+                return
+
             # Vi fjerner alle tidligere beskeder, så det kun er den nyeste
             queue_client.clear_messages()
 

@@ -154,7 +154,7 @@ const props = defineProps({
 
 // Håndterer Storybook state for rating
 if (props.storybookState?.selectedRating) {
-  RatingState(props.storybookState, {
+  RatingState(props.storybookState as { selectedRating: number }, {
     selected,
     feedbackMessage,
     hoverMessage,

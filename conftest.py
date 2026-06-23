@@ -19,8 +19,13 @@ Når afhængighederne bliver tilgængelige, bliver disse predikater no-ops.
 from __future__ import annotations
 
 import importlib.util
+import os
+import socket
 import sys
+from functools import lru_cache
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).parent.resolve()
 
@@ -37,6 +42,59 @@ HAS_SPARK_CORE = _available("spark_core")
 HAS_LEVERANCE_CORE = _available("leverance.core")
 HAS_NLTK = _available("nltk")
 HAS_WIN32 = _available("win32gui")
+
+
+def _env_flag(name: str) -> bool | None:
+    value = os.getenv(name)
+    if value is None:
+        return None
+    lowered = value.strip().lower()
+    if lowered in {"1", "true", "yes", "on"}:
+        return True
+    if lowered in {"0", "false", "no", "off"}:
+        return False
+    return None
+
+
+@lru_cache(maxsize=1)
+def _business_db_target() -> tuple[str, int]:
+    db_uri = os.getenv("LEVERANCE_BUSINESS_DATABASE_URI")
+    if db_uri:
+        try:
+            from sqlalchemy.engine import make_url
+
+            db_name = os.getenv("LEVERANCE_BUSINESS_DATABASE_NAME", "DFD_LEVERANCE_forretning")
+            parsed = make_url(db_uri.format(db=db_name))
+            return parsed.host or "", int(parsed.port or 1433)
+        except Exception:
+            pass
+
+    host = os.getenv("LEVERANCE_SQL_HOST", os.getenv("SQLSERVER_HOST", "mssql"))
+    port = int(os.getenv("LEVERANCE_SQL_PORT", os.getenv("SQLSERVER_PORT", "1433")))
+    return host, port
+
+
+@lru_cache(maxsize=1)
+def _business_db_status() -> tuple[bool, str]:
+    forced = _env_flag("JN_TEST_DB_AVAILABLE")
+    if forced is False:
+        return False, "JN_TEST_DB_AVAILABLE is disabled"
+
+    if not _available("pyodbc"):
+        return False, "pyodbc is not installed"
+
+    if forced is True:
+        return True, "JN_TEST_DB_AVAILABLE is enabled"
+
+    host, port = _business_db_target()
+    if not host:
+        return False, "SQL Server host is not configured"
+
+    try:
+        with socket.create_connection((host, port), timeout=0.5):
+            return True, f"SQL Server reachable at {host}:{port}"
+    except OSError as exc:
+        return False, f"SQL Server is not reachable at {host}:{port} ({exc})"
 
 
 def pytest_ignore_collect(collection_path, config):  # type: ignore[override]
@@ -66,3 +124,22 @@ def pytest_ignore_collect(collection_path, config):  # type: ignore[override]
             return True
 
     return False
+
+
+def pytest_collection_modifyitems(config, items):
+    db_available, reason = _business_db_status()
+    if db_available:
+        return
+
+    skip_business_db = pytest.mark.skip(
+        reason=f"JN business-component tests require a SQL Server test DB: {reason}"
+    )
+    for item in items:
+        path = Path(str(item.path)).resolve()
+        try:
+            rel = path.relative_to(ROOT)
+        except ValueError:
+            continue
+
+        if rel.parts[:1] == ("leverance",) and rel.name.startswith("_test_"):
+            item.add_marker(skip_business_db)

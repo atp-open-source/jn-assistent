@@ -9,10 +9,16 @@ description = "Alle API'er for journalnotatsassitenten"
 requires-python = ">=3.11"
 dependencies = [
     "aiservice",
+    "azure-identity>=1.15",
+    "azure-storage-blob>=12.20",
+    "azure-storage-queue>=12.11",
     "flask>=3.0",
-    "sqlalchemy>=2.0",
+    "flask-cors>=5.0",
+    "gunicorn>=22.0",
+    "pandas>=2.2",
     "python-dateutil>=2.9",
     "requests>=2.31",
+    "sqlalchemy>=2.0",
 ]
 
 [dependency-groups]

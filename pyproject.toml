@@ -16,6 +16,9 @@ members = ["aiservice", "audio_streamer", "leverance"]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
+[tool.pdm.build]
+includes = ["spark_core/"]
+
 [project]
 name = "jn-assistent"
 version = "0.1.0"

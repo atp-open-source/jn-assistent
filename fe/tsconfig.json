@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "jsx": "preserve",
+    "types": ["vite/client"]
+  },
+  "include": ["**/*.ts", "**/*.d.ts", "**/*.vue"],
+  "exclude": ["dist", "node_modules", "vite.config.ts"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

@@ -3,7 +3,7 @@ import { defineStore } from "pinia";
 import axios from "axios";
 
 export const useDataStore = defineStore("datastore", () => {
-  const notater = ref({});
+  const notater = ref<any>({});
 
   async function fetchNotatData(dagens_historik = true) {
     /*

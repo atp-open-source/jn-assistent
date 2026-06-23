@@ -4,7 +4,6 @@ import os
 from dfd_azure_ml.core.clients.azure_blob_client import AzureBlobClient
 from dfd_azure_ml.core.clients.ml_auth_client import Authentication
 from ork.project_handler import get_config_for_project
-from spark_core.database.db_utils import use_access_token_for_azure_sql
 from sqlalchemy import Engine, create_engine
 
 from aiservice.authentication import (
@@ -14,6 +13,7 @@ from aiservice.authentication import (
     BaseAuthentication,
     ManagedIdentityAuthentication,
 )
+from spark_core.database.db_utils import use_access_token_for_azure_sql
 
 
 def create_azure_blob_client(app, category, container, account_name):

@@ -1,10 +1,10 @@
 import unittest
 from datetime import datetime, timedelta
 
-from spark_core.testing.base_test_executor import BaseTestExecutor
 from sqlalchemy import select
 
 from leverance import data
+from spark_core.testing.base_test_executor import BaseTestExecutor
 
 from .jn_notat_feedback_business_component import JNNotatFeedbackBusinessComponent
 

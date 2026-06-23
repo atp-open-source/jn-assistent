@@ -3,10 +3,10 @@ from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
 from freezegun import freeze_time
-from spark_core.testing.base_test_executor import BaseTestExecutor
 from sqlalchemy import select
 
 from leverance import data
+from spark_core.testing.base_test_executor import BaseTestExecutor
 
 from .jn_samtale_business_component import JNSamtaleBusinessComponent
 

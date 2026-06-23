@@ -1,0 +1,17 @@
+:root {
+  --primary-color: #02463a;
+  --primary2-color: #587758;
+}
+
+body#jn,
+#jn {
+  color: #1f2937;
+}
+
+.frai-buttons {
+  margin: 0.25rem;
+}
+
+.p-help {
+  color: #6b7280;
+}

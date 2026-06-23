@@ -18,6 +18,7 @@ SCRIPT_DIR = os.path.dirname(
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from alembic import op
+
 from spark_core.database.db_utils import execute_sql
 
 # revision identifiers, brugt af Alembic.

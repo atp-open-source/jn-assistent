@@ -8,6 +8,8 @@
 
 Et AI-drevet system til automatisk optagelse, transskribering og generering af journalnotater fra telefonsamtaler mellem borgere og kunderådgivere. Fra opkald afsluttes til færdigt notat er klar hos kunderådgiveren tager det ca. **6 sekunder**.
 
+Du kan starte **hele stakken lokalt med én Docker Compose-kommando** (SQL Server + Azurite + mock-LLM + backend + frontend) — uden Azure- eller OpenAI-nøgler. Se [Kør lokalt med Docker Compose](#kør-lokalt-med-docker-compose) nedenfor.
+
 ![System overblik](jn_overview.png)
 
 > **Bemærk:** Dette repo er et udpluk af koden og er i nuværende stadie ikke fuldt funktionsdygtig, men mere en inspirationskilde til, hvordan sådan et system kan struktureres.
@@ -19,6 +21,7 @@ Et AI-drevet system til automatisk optagelse, transskribering og generering af j
 ## Indholdsfortegnelse
 
 - [System overblik](#system-overblik)
+- [Kør lokalt med Docker Compose](#kør-lokalt-med-docker-compose)
 - [Komponenter](#komponenter)
 - [Dataflow trin for trin](#dataflow-trin-for-trin)
 - [Repo-struktur](#repo-struktur)
@@ -64,6 +67,94 @@ Opkald afsluttes  --> audio_streamer kalder /process_call hos Leverance
   - Henter notat via /get_notat når "end-summary" modtages
   - Viser notatet til kunderådgiveren
 ```
+
+---
+
+## Kør lokalt med Docker Compose
+
+Du kan starte **hele systemet lokalt med én kommando** — uden Azure-konto, OpenAI-nøgler eller en Windows-maskine. Compose-stakken erstatter de eksterne afhængigheder med emulatorer og mocks:
+
+| Rigtig tjeneste | Lokal erstatning |
+|-----------------|------------------|
+| Azure Blob + Queue Storage | **Azurite** (emulator) |
+| Azure OpenAI (GPT-4o) | **mock-LLM** (FastAPI, deterministiske svar) |
+| Azure SQL / SQL Server | **SQL Server** i container, seedet med en `TEST`-agent |
+| `audio_streamer.exe` (Windows) | **`simulate_call.py`** (efterligner et helt opkald) |
+
+### Forudsætninger
+
+- Docker + Docker Compose (v2)
+- Python 3.12 + [PDM](https://pdm-project.org/) — kun nødvendigt for at køre `simulate_call.py`
+
+### 1. Start stakken
+
+Fra repo-roden:
+
+```bash
+docker compose --env-file .env.docker up -d --build
+```
+
+> `--env-file .env.docker` er **påkrævet** — den indeholder DB-adgangskode, `JN_LOCAL_MODE=1` og emulator-indstillingerne.
+
+Første gang bygges images og SQL Server seedes. Tjek at alt er sundt:
+
+```bash
+docker compose --env-file .env.docker ps          # status på alle containere
+curl http://localhost:8000/healthz                # backend (forventer 200/OK)
+```
+
+**Tjenester og porte:**
+
+| Tjeneste | URL / port | Beskrivelse |
+|----------|------------|-------------|
+| Frontend (Vue 3 + nginx) | http://localhost:4173 | Kunderådgiver-visningen |
+| Leverance (Flask API) | http://localhost:8000 | Endepunkter under `/api/jn/*`, health på `/healthz` |
+| mock-LLM (FastAPI) | http://localhost:8001/docs | Azure OpenAI-kompatibel mock |
+| Azurite (emulator) | localhost:10000–10002 | blob / queue / table |
+| SQL Server | localhost:14333 | seedet med agent `TEST` |
+
+Starten er health-gated via `depends_on` i `docker-compose.yml`: `mssql` → `azurite` + `mock-llm` → `db-init` (seeder DB) → `leverance` → `frontend`.
+
+### 2. Simulér et opkald
+
+Den rigtige `audio_streamer` er Windows-only og kræver rigtig Azure OpenAI-transskribering, så den kan ikke fodre den lokale stak. I stedet efterligner **`simulate_call.py`** hele opkaldsforløbet: den lægger transskriptioner i Azurite, sender status-beskeder (`start-call` → `end-call`) til køen og kalder `/process_call`, præcis som streameren ville.
+
+```bash
+# Installér Python-afhængigheder (engangsopgave)
+pdm install
+
+# Åbn FØRST frontenden i en browser, så du kan se den opdatere sig live:
+#   http://localhost:4173/?username=TEST
+
+# Kør derefter et simuleret opkald (agenten skal matche den seedede 'TEST'):
+pdm run python simulate_call.py demo-001 TEST
+```
+
+Når scriptet er færdigt, viser frontenden notatet — **uden at du behøver genindlæse siden**.
+
+> **Vigtigt — `?username=` er påkrævet.** Frontenden læser kunderådgiverens initialer fra `?username=`-query-parameteren (i prod sættes den af Genesys/SSO). Uden den logges du ind som `Guest`, og der vises intet notat. Brug `http://localhost:4173/?username=TEST` for at matche den seedede agent.
+
+### Hvorfor opdaterer frontenden sig "af sig selv"?
+
+Frontenden poller `/api/jn/fetch_status` med et **adaptivt interval**: normalt hvert 10. sekund, men når den ser status `end-call`, skifter den til hurtig polling **hvert 2. sekund** for at hente notatet hurtigst muligt. `simulate_call.py` sender derfor `start-call` og `end-call` til status-køen ligesom den rigtige streamer, så du kan se siden gå gennem stadierne **"Lytter til opkald…" → "Genererer notat…" → notat**, helt uden manuel genindlæsning.
+
+Hvis du genindlæser siden lige efter scriptet, ser opdateringen "øjeblikkelig" ud, fordi en frisk sideindlæsning poller med det samme — men en allerede åben side opdaterer sig også selv inden for få sekunder.
+
+### 3. (Valgfrit) Kør den automatiske E2E-test
+
+```bash
+JN_E2E_BASE_URL=http://localhost:8000 \
+AZURE_STORAGE_CONNECTION_STRING='UseDevelopmentStorage=true' \
+PYTHONPATH=. pdm run pytest -q tests/test_e2e_happy_path.py
+```
+
+### Luk ned
+
+```bash
+docker compose --env-file .env.docker down -v   # stopper alt og fjerner volumes (DB-data m.m.)
+```
+
+> Stakken er kun beregnet til lokal udvikling og CI. Den bruger bevidst emulatorer/mocks og seedet data, så man kan køre hele happy-path-flowet uden Azure- eller OpenAI-nøgler. Produktionsintegrationerne ændres ikke (lokal adfærd er env-gated via `JN_LOCAL_MODE`).
 
 ---
 

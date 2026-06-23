@@ -1,8 +1,7 @@
 import unittest
 
-from spark_core.testing.base_test_executor import BaseTestExecutor
-
 from leverance import data
+from spark_core.testing.base_test_executor import BaseTestExecutor
 
 from .jn_config_business_component import JNConfigBusinessComponent
 

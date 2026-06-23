@@ -2,12 +2,12 @@ import datetime as dt
 from uuid import UUID
 
 from dateutil.relativedelta import relativedelta
-from spark_core.components.base_component import NonSessionComponent
-from spark_core.components.core_types import OutputTable
 
 from leverance.components.functions.speaker_mapping_function import speaker_mapping
 from leverance.core.logger_adapter import ServiceLoggerAdapter
 from leverance.core.runners.service_runner import ServiceRunner
+from spark_core.components.base_component import NonSessionComponent
+from spark_core.components.core_types import OutputTable
 
 
 class JNSamtaleBusinessComponent(NonSessionComponent, ServiceRunner):
